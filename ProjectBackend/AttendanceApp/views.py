@@ -7,6 +7,8 @@ from .validation import teacher_email_list
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Teacher
+import random
+from django.core.mail import send_mail
 # Create your views here.
 def helloUser(request):
     return HttpResponse("Welcome user.")
@@ -29,7 +31,7 @@ def teacherRegistration(request):
         # print(f"strng = {strng} and type(strng) = {type(strng)} ")
         # strng = b'{"username": "sharma", "email": "sharma", "password": "sharma", "confirm_password": "sharma"}' and type(strng) = <class 'str'>
         # registration_details = json.loads(registration_details)
-        print(f"type(registration details) =  {type(registration_details)} ")
+        # print(f"type(registration details) =  {type(registration_details)} ")
         # type(registration details) =  <class 'dict'>
         username = registration_details['username']
         email = registration_details['email']
@@ -53,17 +55,57 @@ def teacherRegistration(request):
 @csrf_exempt
 @api_view(['POST'])
 def login(request):
-    registration_details = request.data
-    username = registration_details['username']
-    password = registration_details['password']
-    teachers = Teacher.objects.all()
-    json_data_success = json.dumps({'success': 'welcome user'})
-    json_data_failure = json.dumps({'failure': 'invalid username or password'})
-    for teacher in teachers:
-        if username == teacher.username and password == teacher.password:
-            return Response(data= json_data_success, status= status.HTTP_200_OK)
+    if request.method == 'POST':
+        login_details = request.data
+        username = login_details['username']
+        password = login_details['password']
+        teachers = Teacher.objects.all()
+        json_data_success = {'success': 'welcome user'}
+        json_data_failure = {'failure': 'invalid username or password'}
+        for teacher in teachers:
+            if username == teacher.username and password == teacher.password:
+                return Response(data= json_data_success, status= status.HTTP_200_OK)
 
-    return Response(data = json_data_failure, status = status.HTTP_403_FORBIDDEN)
+        return Response(data = json_data_failure, status = status.HTTP_403_FORBIDDEN)
+
+@csrf_exempt
+@api_view(['POST'])
+def forgotPassword(request):
+    if request.method == 'POST':
+        email = request.data['email']
+        # print("email = ", email, "type(email) = ", type(email))
+        email_dct = {'email': email}
+        all_user_emails = Teacher.objects.values('email')
+
+        # for i in all_user_emails:
+        #     print(i)
+        #     print(type(i))
+        # print(all_user_emails)
+        if email_dct not in all_user_emails:
+            return_data = {'failure': 'Please enter your campus email or contact the department.'}
+            return Response(data = return_data, status= status.HTTP_403_FORBIDDEN)
+        
+        global otp
+        otp = round(random.random()*10**6)
+        print("otp  = ", otp)
+        send_mail("Password Reset", f"Your OTP is {otp}", 'mail.ioehub@gmail.com', ['fofehi6850@moneyzon.com'] , fail_silently= False,)
+        #if fail_silently is set to True, you'll get no log of error messages.
+        return_data = {'success': f'An otp has been sent to {email}. Please enter the otp and reset your password.'}
+        return Response(data = return_data, status= status.HTTP_200_OK)
+
+@csrf_exempt
+@api_view(['POST'])
+def validateOTP(request):
+    if request.method == 'POST':
+        entered_otp = int(request.data['otp'])
+        # print("entered otp = ", entered_otp)
+        # print("type(entered otp) = ", type(entered_otp))
+        if entered_otp == otp:
+            success_message = {'success': 'Email verified successfully.'}
+            return Response(data = success_message, status = status.HTTP_200_OK)
+        
+        failure_message = {'failure': 'Invalid OTP.'}
+        return Response(data = failure_message, status= status.HTTP_403_FORBIDDEN)
 
 
     
