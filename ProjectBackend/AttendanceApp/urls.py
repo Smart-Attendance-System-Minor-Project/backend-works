@@ -6,6 +6,7 @@ urlpatterns = [
     path('register/', views.teacherRegistration),
     path('login/', views.login),
     path('forgot_password/', views.forgotPassword),
-    path('otp_validation/', views.validateOTP)
+    path('otp_validation/', views.validateOTP), 
+    path('password_reset/', views.passwordReset)
     
 ]

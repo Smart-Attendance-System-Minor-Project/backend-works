@@ -59,13 +59,15 @@ def login(request):
         login_details = request.data
         username = login_details['username']
         password = login_details['password']
-        teachers = Teacher.objects.all()
-        json_data_success = {'success': 'welcome user'}
+        try:
+            teacher = Teacher.objects.get(username = username, password = password)
+        except:
+            teacher = None
+        print("teachers = ", teacher)
+        json_data_success = {'success': f'welcome {teacher.first_name} sir'}
         json_data_failure = {'failure': 'invalid username or password'}
-        for teacher in teachers:
-            if username == teacher.username and password == teacher.password:
+        if teacher is not None:
                 return Response(data= json_data_success, status= status.HTTP_200_OK)
-
         return Response(data = json_data_failure, status = status.HTTP_403_FORBIDDEN)
 
 @csrf_exempt
@@ -92,6 +94,7 @@ def forgotPassword(request):
         #if fail_silently is set to True, you'll get no log of error messages.
         return_data = {'success': f'An otp has been sent to {email}. Please enter the otp and reset your password.'}
         return Response(data = return_data, status= status.HTTP_200_OK)
+        #the user is directed to /otp_validation after this
 
 @csrf_exempt
 @api_view(['POST'])
@@ -106,6 +109,21 @@ def validateOTP(request):
         
         failure_message = {'failure': 'Invalid OTP.'}
         return Response(data = failure_message, status= status.HTTP_403_FORBIDDEN)
+        #the user is directed to password reset after this
+
+@csrf_exempt
+@api_view(['POST'])
+def passwordReset(request):
+    if request.method == 'POST':
+        entered_email = request.data['email']
+        entered_password = request.data['password']
+        #security concern. Hash these password
+        teacher = Teacher.objects.get(email = entered_email)
+        teacher.password = entered_password
+        teacher.save(update_fields = ['password'])
+        success_message = {'success': 'password changed successfully'}
+        return Response(data = success_message, status= status.HTTP_200_OK)
+
 
 
     
