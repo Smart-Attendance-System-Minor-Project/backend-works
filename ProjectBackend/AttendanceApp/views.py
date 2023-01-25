@@ -64,10 +64,10 @@ def login(request):
         except:
             teacher = None
         print("teachers = ", teacher)
-        json_data_success = {'success': f'welcome {teacher.first_name} sir'}
-        json_data_failure = {'failure': 'invalid username or password'}
         if teacher is not None:
+                json_data_success = {'success': f'welcome {teacher.first_name} sir'}
                 return Response(data= json_data_success, status= status.HTTP_200_OK)
+        json_data_failure = {'failure': 'invalid username or password'}
         return Response(data = json_data_failure, status = status.HTTP_403_FORBIDDEN)
 
 @csrf_exempt
