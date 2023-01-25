@@ -37,6 +37,7 @@ def teacherRegistration(request):
         email = registration_details['email']
         password = registration_details['password']
         confirm_password = registration_details['confirm_password']
+        full_name = registration_details['full_name']
         
         if email not in teacher_email_list:
             # return_json = json.dumps({'status_code':'403','error':'Please register with your college mail id or contact department.'})
@@ -47,7 +48,7 @@ def teacherRegistration(request):
             return_json = json.dumps({'error':'The entered passwords do not match.'})
             return Response(data = return_json, status= status.HTTP_400_BAD_REQUEST)
         print("good")
-        teacher = Teacher(username = username, email = email, password = password)
+        teacher = Teacher(username = username, email = email, password = password, full_name = full_name)
         teacher.save()
        
         return HttpResponse("success")
