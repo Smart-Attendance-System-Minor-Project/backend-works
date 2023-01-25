@@ -131,10 +131,3 @@ def passwordReset(request):
         teacher.save(update_fields = ['password'])
         success_message = {'success': 'password changed successfully'}
         return Response(data = success_message, status= status.HTTP_200_OK)
-
-
-
-    
-
-
-    
