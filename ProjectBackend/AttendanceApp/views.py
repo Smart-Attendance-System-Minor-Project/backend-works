@@ -90,7 +90,7 @@ def forgotPassword(request):
         global otp
         otp = round(random.random()*10**6)
         print("otp  = ", otp)
-        send_mail("Password Reset", f"Your OTP is {otp}", 'mail.ioehub@gmail.com', ['fofehi6850@moneyzon.com'] , fail_silently= False,)
+        send_mail("Password Reset", f"Your OTP is {otp}", 'mail.ioehub@gmail.com', [f'{email}'], fail_silently= False,)
         #if fail_silently is set to True, you'll get no log of error messages.
         return_data = {'success': f'An otp has been sent to {email}. Please enter the otp and reset your password.'}
         return Response(data = return_data, status= status.HTTP_200_OK)
