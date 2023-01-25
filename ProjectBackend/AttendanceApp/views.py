@@ -11,7 +11,7 @@ import random
 from django.core.mail import send_mail
 # Create your views here.
 def helloUser(request):
-    return HttpResponse("Welcome user.")
+    return HttpResponse("Hello user. This is a test site for WellAttend App.")
 
 @csrf_exempt
 @api_view(['POST'])
