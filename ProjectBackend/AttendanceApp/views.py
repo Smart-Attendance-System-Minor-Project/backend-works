@@ -117,6 +117,13 @@ def passwordReset(request):
     if request.method == 'POST':
         entered_email = request.data['email']
         entered_password = request.data['password']
+        confirm_password = request.data['confirm_password']
+        if entered_password != confirm_password:
+            failure_message = {'failure': 'the entered password do not match.'}
+            return Response(data = failure_message, status= status.HTTP_403_FORBIDDEN)
+        
+        
+
         #security concern. Hash these password
         teacher = Teacher.objects.get(email = entered_email)
         teacher.password = entered_password
