@@ -135,7 +135,8 @@ def passwordReset(request):
 @api_view(['GET'])
 def seeUsers(request):
     teacher = Teacher.objects.all()
-    teacher_string = ''
+    teacher_string = '' 
+    
     for i in teacher:
         teacher_string += str(i.username) + "  " + str(i.full_name)+ '<br>'
     return HttpResponse(teacher_string)
