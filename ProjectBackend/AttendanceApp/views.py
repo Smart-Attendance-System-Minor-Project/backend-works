@@ -139,4 +139,6 @@ def seeUsers(request):
     for i in teacher:
         teacher_string += str(i.username) + '<br>'
     return HttpResponse(teacher_string)
+
+    
         
