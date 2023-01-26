@@ -39,7 +39,8 @@ def teacherRegistration(request):
         password = registration_details['password']
         confirm_password = registration_details['confirm_password']
         full_name = registration_details['full_name']
-        
+        print(f"username = {username} and type(username) = {type(username)}")
+
         if email not in teacher_email_list:
             # return_json = json.dumps({'status_code':'403','error':'Please register with your college mail id or contact department.'})
             return_json = {'status_code':'403','error':'Please register with your college mail id or contact department.'}
@@ -148,6 +149,28 @@ def seeUsers(request):
     for i in teacher:
         teacher_string += str(i.username) + "  " + str(i.full_name)+ '<br>'
     return HttpResponse(teacher_string)
+
+
+@api_view(['POST'])
+def addClass(request):
+    if request.method == 'POST':
+        class_details = request.data
+        username = class_details['username']
+        batch = class_details['batch']
+        faculty = class_details['faculty']
+        subject = class_details['subject']
+        class_type = class_details['class_type']
+        section = class_details['section']
+
+        class_name = batch + faculty + section
+        teacher = Teacher.objects.get(username = username)
+        classes = [{'subject': subject, 'class_name': class_name, 'class_type':class_type}]
+        teacher.classes += " " + str(classes)
+        teacher.save()
+
+        success_message = {'message': f'class {class_name} added successfully.'}
+        return Response(data = success_message, status = status.HTTP_200_OK)
+
 
 
         
