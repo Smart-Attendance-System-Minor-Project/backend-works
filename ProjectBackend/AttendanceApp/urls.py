@@ -7,6 +7,7 @@ urlpatterns = [
     path('login/', views.login),
     path('forgot_password/', views.forgotPassword),
     path('otp_validation/', views.validateOTP), 
-    path('password_reset/', views.passwordReset)
+    path('password_reset/', views.passwordReset),
+    path('teachers/', views.seeUsers)
     
 ]

@@ -131,3 +131,12 @@ def passwordReset(request):
         teacher.save(update_fields = ['password'])
         success_message = {'success': 'password changed successfully'}
         return Response(data = success_message, status= status.HTTP_200_OK)
+
+@api_view(['GET'])
+def seeUsers(request):
+    teacher = Teacher.objects.all()
+    teacher_string = ''
+    for i in teacher:
+        teacher_string += str(i.username) + '<br>'
+    return HttpResponse(teacher_string)
+        
