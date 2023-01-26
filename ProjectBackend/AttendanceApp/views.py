@@ -9,6 +9,7 @@ from rest_framework import status
 from .models import Teacher
 import random
 from django.core.mail import send_mail
+from django.db import IntegrityError
 # Create your views here.
 def helloUser(request):
     return HttpResponse("Hello user. This is a test site for WellAttend App.")
@@ -48,7 +49,12 @@ def teacherRegistration(request):
             return_json = json.dumps({'error':'The entered passwords do not match.'})
             return Response(data = return_json, status= status.HTTP_400_BAD_REQUEST)
         print("good")
-        teacher = Teacher(username = username, email = email, password = password, full_name = full_name)
+        try:
+            teacher = Teacher(username = username, email = email, password = password, full_name = full_name)
+
+        except IntegrityError:
+            failure_data = {"message": "Username already exists. Please enter a unique username."}
+            return Response(data = failure_data, status= status.HTTP_409_CONFLICT)
         teacher.save()
        
         return HttpResponse("success")
@@ -136,7 +142,7 @@ def passwordReset(request):
 def seeUsers(request):
     teacher = Teacher.objects.all()
     teacher_string = '' 
-    
+
     for i in teacher:
         teacher_string += str(i.username) + "  " + str(i.full_name)+ '<br>'
     return HttpResponse(teacher_string)
