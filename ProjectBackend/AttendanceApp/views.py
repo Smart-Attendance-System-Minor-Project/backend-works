@@ -48,14 +48,16 @@ def teacherRegistration(request):
         if password != confirm_password:
             return_json = json.dumps({'error':'The entered passwords do not match.'})
             return Response(data = return_json, status= status.HTTP_400_BAD_REQUEST)
-        print("good")
+        
         try:
+            # print("inside the try block")
             teacher = Teacher(username = username, email = email, password = password, full_name = full_name)
+            teacher.save()
 
         except IntegrityError:
+            # print("Inside the integrity error")
             failure_data = {"message": "Username already exists. Please enter a unique username."}
             return Response(data = failure_data, status= status.HTTP_409_CONFLICT)
-        teacher.save()
        
         return HttpResponse("success")
 
