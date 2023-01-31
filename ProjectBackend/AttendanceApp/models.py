@@ -6,6 +6,13 @@ class Teacher(models.Model):
     email = models.EmailField(max_length=40)
     password = models.CharField(max_length= 30)
     full_name = models.CharField(max_length=40)
-    classes = models.CharField(max_length=1000)
+    classes = models.CharField(max_length=10000)
+
+class OneTimePassword(models.Model):
+    email = models.EmailField(max_length = 40)
+    otp = models.CharField(max_length = 6)
+    time = models.CharField(max_length= 15)
+
+
     
 

@@ -9,7 +9,8 @@ urlpatterns = [
     path('otp_validation/', views.validateOTP), 
     path('password_reset/', views.passwordReset),
     path('teachers/', views.seeUsers),
-    path('add_class/', views.addClass)
+    path('add_class/', views.addClass),
+    path('view_class/', views.viewClasses),
+    path('view_otps/', views.viewOTP)
 
-    
 ]

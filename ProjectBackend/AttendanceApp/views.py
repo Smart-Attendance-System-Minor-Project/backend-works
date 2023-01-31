@@ -2,14 +2,16 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
-import json
 from .validation import teacher_email_list
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Teacher
-import random
+from .models import Teacher, OneTimePassword
+import random, time, ast, json
 from django.core.mail import send_mail
 from django.db import IntegrityError
+
+#ast is an abstract syntax tree and it is used to convert one data type to the other
+
 # Create your views here.
 def helloUser(request):
     return HttpResponse("Hello user. This is a test site for WellAttend App.")
@@ -97,9 +99,12 @@ def forgotPassword(request):
             return_data = {'failure': 'Please enter your campus email or contact the department.'}
             return Response(data = return_data, status= status.HTTP_403_FORBIDDEN)
         
-        global otp
-        otp = round(random.random()*10**6)
+        #this needs to modified..........
+        # global otp
+        OneTimePassword.objects.filter(email = email).delete()
+        otp = random.randint(100000, 999999)
         print("otp  = ", otp)
+        OneTimePassword.objects.create(email = email, otp = otp, time = int(time.time()))
         send_mail("Password Reset", f"Your OTP is {otp}", 'mail.ioehub@gmail.com', [f'{email}'], fail_silently= False,)
         #if fail_silently is set to True, you'll get no log of error messages.
         return_data = {'success': f'An otp has been sent to {email}. Please enter the otp and reset your password.'}
@@ -110,16 +115,32 @@ def forgotPassword(request):
 @api_view(['POST'])
 def validateOTP(request):
     if request.method == 'POST':
-        entered_otp = int(request.data['otp'])
-        # print("entered otp = ", entered_otp)
-        # print("type(entered otp) = ", type(entered_otp))
-        if entered_otp == otp:
-            success_message = {'success': 'Email verified successfully.'}
-            return Response(data = success_message, status = status.HTTP_200_OK)
-        
-        failure_message = {'failure': 'Invalid OTP.'}
-        return Response(data = failure_message, status= status.HTTP_403_FORBIDDEN)
-        #the user is directed to password reset after this
+        entered_email = request.data['email']
+        entered_otp = request.data['otp']
+        try:
+            otp_data = OneTimePassword.objects.get(email = entered_email)
+            current_time = int(time.time())
+            otp = otp_data.otp
+            time_duration = current_time - int(otp_data.time)
+            if time_duration > 120:
+                failure_message = {'message': 'otp expired'}
+                otp_data.delete()
+                return Response(data = failure_message, status= status.HTTP_410_GONE)
+
+            if entered_otp == otp:
+                success_message = {'message': 'otp verified successfully.'}
+                otp_data.delete()
+                return Response(data = success_message, status= status.HTTP_200_OK)
+            
+            else:
+                failure_message = {'message': 'invalid otp.'}
+                return Response(data = failure_message, status= status.HTTP_401_UNAUTHORIZED)
+
+
+        except OneTimePassword.DoesNotExist:
+            failure_message = {'message': f'OTP was not requested by {entered_email} or it expired.'}
+            return Response(data = failure_message, status = status.HTTP_410_GONE)
+
 
 @csrf_exempt
 @api_view(['POST'])
@@ -135,9 +156,16 @@ def passwordReset(request):
         
 
         #security concern. Hash these password
-        teacher = Teacher.objects.get(email = entered_email)
-        teacher.password = entered_password
-        teacher.save(update_fields = ['password'])
+        try:
+            teacher = Teacher.objects.get(email = entered_email)
+            teacher.password = entered_password
+            teacher.save(update_fields = ['password'])
+        
+        except Teacher.DoesNotExist:
+            failure_message = {'failure': 'invalid email. Please enter your college email or contact the department.'}
+            return Response(data = failure_message, status= status.HTTP_403_FORBIDDEN)
+            
+
         success_message = {'success': 'password changed successfully'}
         return Response(data = success_message, status= status.HTTP_200_OK)
 
@@ -150,11 +178,32 @@ def seeUsers(request):
         teacher_string += str(i.username) + "  " + str(i.full_name)+ '<br>'
     return HttpResponse(teacher_string)
 
+@api_view(['POST'])
+def viewClasses(request):
+    username = request.data['username']
+    try:
+        teacher = Teacher.objects.get(username = username)
+        try:
+            classes = ast.literal_eval(teacher.classes)
+            return Response(data = classes, status= status.HTTP_200_OK)
 
+        except SyntaxError:
+            classes = list(teacher.classes)
+            return Response(data = classes, status= status.HTTP_200_OK)
+
+    
+    except Teacher.DoesNotExist:
+        failure_message = {'failure': f'invalid username. Teacher with username {username} does not exist.'}
+        return Response(data = failure_message, status= status.HTTP_403_FORBIDDEN)
+
+
+
+#login should be required for this
 @api_view(['POST'])
 def addClass(request):
     if request.method == 'POST':
         class_details = request.data
+        #username will be sent by the frontend
         username = class_details['username']
         batch = class_details['batch']
         faculty = class_details['faculty']
@@ -163,13 +212,38 @@ def addClass(request):
         section = class_details['section']
 
         class_name = batch + faculty + section
-        teacher = Teacher.objects.get(username = username)
-        classes = [{'subject': subject, 'class_name': class_name, 'class_type':class_type}]
-        teacher.classes += " " + str(classes)
-        teacher.save()
+        
+        try:
+            teacher = Teacher.objects.get(username = username)
+            class_dct = {'subject': subject, 'class_name': class_name, 'class_type': class_type} 
+            # classes = teacher.classes
+            # print(f"classes = {classes} and type(classes) = {type(classes)}")
+            try:
+                classes = ast.literal_eval(teacher.classes)
+            
+            except SyntaxError:
+                classes = list(teacher.classes)
+            classes.append(class_dct)
+            classes = str(classes)
+            teacher.classes = classes
+            # teacher.classes = ""
+            teacher.save()
+            success_message = {'message': f'class {class_name} added successfully.'}
+            return Response(data = success_message, status = status.HTTP_200_OK)
+        
+        except Teacher.DoesNotExist:
+            failure_message = {'message': f'teacher with username {username} does not exist.'}
+            return Response(data = failure_message, status= status.HTTP_403_FORBIDDEN)
 
-        success_message = {'message': f'class {class_name} added successfully.'}
-        return Response(data = success_message, status = status.HTTP_200_OK)
+
+@api_view(['GET'])
+def viewOTP(request):
+    otps = OneTimePassword.objects.all()
+    for i in otps:
+        print(i)
+
+    return HttpResponse("OTPs are printed")
+
 
 
 
