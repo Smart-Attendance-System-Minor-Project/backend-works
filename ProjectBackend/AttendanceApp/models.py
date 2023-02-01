@@ -13,6 +13,16 @@ class OneTimePassword(models.Model):
     otp = models.CharField(max_length = 6)
     time = models.CharField(max_length= 15)
 
+class AttendanceRecord(models.Model):
+    teacher_username = models.CharField(max_length= 20)
+    class_name = models.CharField(max_length= 40) #this will be in the format o76bct051
+    class_type = models.CharField(max_length = 20)
+    subject = models.CharField(max_length = 40)
+    date = models.DateField(auto_now = True)
+    attendance_record = models.CharField(max_length = 10000) #I expect a list here
+    presence = models.FloatField()
+
+
 
     
 

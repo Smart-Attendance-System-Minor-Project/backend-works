@@ -2,10 +2,10 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
-from .validation import teacher_email_list
+from .validation import teacher_email_list, returnPresence
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Teacher, OneTimePassword
+from .models import Teacher, OneTimePassword, AttendanceRecord
 import random, time, ast, json
 from django.core.mail import send_mail
 from django.db import IntegrityError
@@ -239,10 +239,33 @@ def addClass(request):
 @api_view(['GET'])
 def viewOTP(request):
     otps = OneTimePassword.objects.all()
+    otp_list = []
     for i in otps:
-        print(i)
+        otp_list.append([i.email, i.time, i.otp])
 
-    return HttpResponse("OTPs are printed")
+    return HttpResponse(f"OTPs are printed as {otp_list}")
+
+@api_view(['POST'])
+def saveRecord(request):
+    if request.method == 'POST':
+        teacher_details = request.data
+        teacher_username = teacher_details['username']
+        class_name = teacher_details['class_name'] #for example 076bctcd
+        class_type = teacher_details['class_type']
+        subject = teacher_details['subject']
+        attendance_record = teacher_details['attendance_record']
+        percentage_present = returnPresence(attendance_record)
+        try:
+            AttendanceRecord.objects.create(teacher_username = teacher_username, class_name = class_name, class_type = class_type, subject = subject, attendance_record = attendance_record, presence = percentage_present)
+            success_message = {'message': 'Attendance taken successfully.'}
+            return Response(data = success_message, status = status.HTTP_200_OK)
+
+        
+        except Exception as exc:
+            error_name = exc.__class__.__name__
+            failure_message = {'message': f'The error is due to {error_name}. Please contact the developer.'}
+            return Response(data = failure_message, status= status.HTTP_403_FORBIDDEN)
+
 
 
 
