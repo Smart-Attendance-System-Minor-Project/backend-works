@@ -19,7 +19,7 @@ class AttendanceRecord(models.Model):
     class_type = models.CharField(max_length = 20)
     subject = models.CharField(max_length = 40)
     date = models.DateField(auto_now = True)
-    attendance_record = models.CharField(max_length = 10000) #I expect a list here
+    attendance_record = models.JSONField(max_length = 10000) #I expect a list here
     presence = models.FloatField()
 
 
