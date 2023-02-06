@@ -83,14 +83,14 @@ DATABASES = {
 }
 
 # DATABASES =  {
-#     'default': 
-#     { 
-#         'ENGINE' : 'django.db.backends.postgresql_psycopg2', 
-#         'NAME' : 'project_database', 
-#         'USER' : 'test_user', 
-#         'PASSWORD' : 'password', 
-#         'HOST' : 'localhost', 
-#         'PORT' : '' 
+#     'default':
+#     {
+#         'ENGINE' : 'django.db.backends.mysql',
+#         'NAME' : 'prat051$default',
+#         'USER' : 'prat051',
+#         'PASSWORD' : 'adminadmin',
+#         'HOST' : 'prat051.mysql.pythonanywhere-services.com',
+#         'PORT' : '3306'
 #     }
 # }
 
