@@ -21,3 +21,4 @@ urlpatterns = [
     path('attendance/', include('AttendanceApp.urls')),
     path('', helloUser)
 ]
+
