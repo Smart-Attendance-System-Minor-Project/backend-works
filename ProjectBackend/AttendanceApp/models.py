@@ -6,7 +6,7 @@ class Teacher(models.Model):
     email = models.EmailField(max_length=40)
     password = models.CharField(max_length= 30)
     full_name = models.CharField(max_length=40)
-    classes = models.JSONField()
+    classes = models.CharField(max_length= 10000)
 
 
 class OneTimePassword(models.Model):
