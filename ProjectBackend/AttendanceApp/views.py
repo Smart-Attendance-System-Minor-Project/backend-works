@@ -258,7 +258,7 @@ def saveRecord(request):
         record_details = request.data
         teacher_username = record_details['username']
         class_name = record_details['class_name'] #for example 076bctcd
-        class_type = record_details['class_type'] #lecture or practical
+        class_type = record_details['class_type'] #l or p
         subject = record_details['subject'] 
         attendance_record = record_details['attendance_record']
         print("attendance_record = ", attendance_record, "type(attendance_record) = ", type(attendance_record))
@@ -280,5 +280,5 @@ def saveRecord(request):
             print("error = ", error_name)
             AttendanceRecord.objects.create(teacher_username = teacher_username, class_name = class_name, class_type = class_type, subject = subject, attendance_record = attendance_record)
             message = {'message': 'Attendance taken successfully.'}
-            return Response(data = message, status= status.HTTP_403_FORBIDDEN)
+            return Response(data = message, status= status.HTTP_200_OK)
             
