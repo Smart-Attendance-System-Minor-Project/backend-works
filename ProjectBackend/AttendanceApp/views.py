@@ -223,13 +223,20 @@ def addClass(request):
             
             except SyntaxError:
                 classes = list(teacher.classes)
-            classes.append(class_dct)
-            classes = str(classes)
-            teacher.classes = classes
-            # teacher.classes = ""
-            teacher.save()
-            success_message = {'message': f'class {class_name} added successfully.'}
-            return Response(data = success_message, status = status.HTTP_200_OK)
+            
+            if class_dct not in classes:
+                classes.append(class_dct)
+                classes = str(classes)
+                teacher.classes = classes
+                # teacher.classes = ""
+                teacher.save()
+                success_message = {'message': f'class {class_name} added successfully.'}
+                return Response(data = success_message, status = status.HTTP_200_OK)
+            
+            else:
+                message = {'message': f'class {class_name} - {subject} - {class_type} already exists.'}
+                return Response(data = message, status = status.HTTP_208_ALREADY_REPORTED)
+
         
         except Teacher.DoesNotExist:
             failure_message = {'message': f'teacher with username {username} does not exist.'}
@@ -248,26 +255,30 @@ def viewOTP(request):
 @api_view(['POST'])
 def saveRecord(request):
     if request.method == 'POST':
-        teacher_details = request.data
-        teacher_username = teacher_details['username']
-        class_name = teacher_details['class_name'] #for example 076bctcd
-        class_type = teacher_details['class_type']
-        subject = teacher_details['subject']
-        attendance_record = teacher_details['attendance_record']
-        percentage_present = returnPresence(attendance_record)
+        record_details = request.data
+        teacher_username = record_details['username']
+        class_name = record_details['class_name'] #for example 076bctcd
+        class_type = record_details['class_type'] #lecture or practical
+        subject = record_details['subject'] 
+        attendance_record = record_details['attendance_record']
+        print("attendance_record = ", attendance_record, "type(attendance_record) = ", type(attendance_record))
         try:
-            AttendanceRecord.objects.create(teacher_username = teacher_username, class_name = class_name, class_type = class_type, subject = subject, attendance_record = attendance_record, presence = percentage_present)
-            success_message = {'message': 'Attendance taken successfully.'}
-            return Response(data = success_message, status = status.HTTP_200_OK)
+            print("hola mundo")
+            record = AttendanceRecord.objects.get(teacher_username = teacher_username, class_name = class_name, class_type = class_type, subject = subject)
+            print("hola mundo")
+            print("record = ", record)
+            print("record.attendance_record = ", record.attendance_record)
+            print("type of record.attendance_record = ", type(record.attendance_record))
 
-        
-        except Exception as exc:
-            error_name = exc.__class__.__name__
-            failure_message = {'message': f'The error is due to {error_name}. Please contact the developer.'}
-            return Response(data = failure_message, status= status.HTTP_403_FORBIDDEN)
-
-
-
-
-
-        
+            record.attendance_record = json.dumps(record.attendance_record) + json.dumps(attendance_record)
+            record.save()
+            message = {'message': 'Attendance taken successfully.'}
+            return Response (data = message, status= status.HTTP_200_OK)
+                       
+        except AttendanceRecord.DoesNotExist as err:
+            error_name = err
+            print("error = ", error_name)
+            AttendanceRecord.objects.create(teacher_username = teacher_username, class_name = class_name, class_type = class_type, subject = subject, attendance_record = attendance_record)
+            message = {'message': 'Attendance taken successfully.'}
+            return Response(data = message, status= status.HTTP_403_FORBIDDEN)
+            

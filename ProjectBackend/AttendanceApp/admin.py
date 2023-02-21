@@ -7,4 +7,4 @@ class TeacherAdmin(admin.ModelAdmin):
 
 @admin.register(AttendanceRecord)
 class AttendanceRecord(admin.ModelAdmin):
-    list_display = ['teacher_username', 'class_name', 'class_type', 'subject', 'date', 'attendance_record', 'presence']
+    list_display = ['teacher_username', 'class_name', 'class_type', 'subject', 'attendance_record']
