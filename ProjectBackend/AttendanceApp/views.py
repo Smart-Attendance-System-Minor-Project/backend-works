@@ -258,7 +258,6 @@ def addClass(request):
                 message = {'message': f'class {class_name} - {subject} - {class_type} already exists.'}
                 return Response(data = message, status = status.HTTP_208_ALREADY_REPORTED)
 
-        
         except Teacher.DoesNotExist:
             failure_message = {'message': f'teacher with username {username} does not exist.'}
             return Response(data = failure_message, status= status.HTTP_403_FORBIDDEN)
