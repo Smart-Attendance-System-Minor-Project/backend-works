@@ -13,5 +13,6 @@ urlpatterns = [
     path('view_class/', views.viewClasses),
     path('view_otps/', views.viewOTP),
     path('save_record/', views.saveRecord),
+    path('get_records/', views.getRecords),
 
 ]

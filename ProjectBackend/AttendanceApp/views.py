@@ -308,3 +308,21 @@ def saveRecord(request):
             message = {'message': 'Attendance taken successfully.'}
             return Response(data = message, status= status.HTTP_200_OK)
             
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def getRecords(request):
+    if request.method == 'POST':
+        record_details = request.data
+        username = record_details['username']
+
+        try:
+            attendance_record = AttendanceRecord.objects.filter(teacher_username = username)
+            print(f"attendance records = {attendance_record}")
+            return Response(data = attendance_record, status= status.HTTP_200_OK)
+
+        except AttendanceRecord.DoesNotExist as err:
+            error_name = err
+            print("error = ", error_name)
+            message = {'failure': f'Error! {error_name}. No data exists for the given details.'}
+            return Response(message, status = status.HTTP_204_NO_CONTENT)
+
