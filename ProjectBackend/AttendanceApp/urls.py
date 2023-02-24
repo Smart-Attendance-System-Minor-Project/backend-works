@@ -12,6 +12,6 @@ urlpatterns = [
     path('add_class/', views.addClass),
     path('view_class/', views.viewClasses),
     path('view_otps/', views.viewOTP),
-    path('save_record/', views.saveRecord)
+    path('save_record/', views.saveRecord),
 
 ]

@@ -2,4 +2,5 @@
 migrations/
 __pycache__/
 *.sqlite3
-data.json
+ProjectBackend/staticfiles/input.txt
+
