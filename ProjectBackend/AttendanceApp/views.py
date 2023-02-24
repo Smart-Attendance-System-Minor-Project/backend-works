@@ -4,7 +4,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 
 
 from .models import Teacher, OneTimePassword, AttendanceRecord
@@ -188,7 +188,7 @@ def passwordReset(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAuthenticated])
 def seeUsers(request):
     teacher = Teacher.objects.all()
     teacher_string = '' 
@@ -198,7 +198,7 @@ def seeUsers(request):
     return HttpResponse(teacher_string)
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def viewClasses(request):
     username = request.data['username']
     try:
@@ -220,7 +220,7 @@ def viewClasses(request):
 
 #login should be required for this
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def addClass(request):
     if request.method == 'POST':
         class_details = request.data
@@ -274,7 +274,7 @@ def viewOTP(request):
     return HttpResponse(f"OTPs are printed as {otp_list}")
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def saveRecord(request):
     if request.method == 'POST':
         record_details = request.data
@@ -308,7 +308,7 @@ def saveRecord(request):
             return Response(data = message, status= status.HTTP_200_OK)
             
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def getRecords(request):
     if request.method == 'POST':
         record_details = request.data
