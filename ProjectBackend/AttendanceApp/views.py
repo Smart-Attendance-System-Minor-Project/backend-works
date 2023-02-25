@@ -5,8 +5,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
-
-
+from .serializers import RecordSerializer
+from rest_framework.renderers import JSONRenderer
 from .models import Teacher, OneTimePassword, AttendanceRecord
 import random, time, ast, json
 from django.core.mail import send_mail
@@ -316,8 +316,10 @@ def getRecords(request):
 
         try:
             attendance_record = AttendanceRecord.objects.filter(teacher_username = username)
-            print(f"attendance records = {attendance_record}")
-            return Response(data = attendance_record, status= status.HTTP_200_OK)
+            serialized_record = RecordSerializer(attendance_record, many = True)
+            json_record = JSONRenderer().render(serialized_record.data)
+            print(f"attendance records = {json_record} and its type is {type(attendance_record)}")
+            return Response(data = json_record, status= status.HTTP_200_OK)
 
         except AttendanceRecord.DoesNotExist as err:
             error_name = err
