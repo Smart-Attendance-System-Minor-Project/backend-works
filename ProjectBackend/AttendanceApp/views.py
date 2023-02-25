@@ -295,7 +295,7 @@ def saveRecord(request):
             # print("type of record.attendance_record = ", type(record.attendance_record))
             # type of record.attendance_record =  <class 'str'>
             #json.dumps(x) = x lai json string ma dump gar vai
-            record.attendance_record = record.attendance_record + json.dumps(attendance_record)
+            record.attendance_record = record.attendance_record + ', ' + json.dumps(attendance_record)
             record.save()
             message = {'message': 'Attendance taken successfully.'}
             return Response (data = message, status= status.HTTP_200_OK)
