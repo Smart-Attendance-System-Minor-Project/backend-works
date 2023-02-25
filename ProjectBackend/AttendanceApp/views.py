@@ -307,6 +307,7 @@ def saveRecord(request):
             message = {'message': 'Attendance taken successfully.'}
             return Response(data = message, status= status.HTTP_200_OK)
             
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def getRecords(request):
@@ -315,11 +316,17 @@ def getRecords(request):
         username = record_details['username']
 
         try:
-            attendance_record = AttendanceRecord.objects.filter(teacher_username = username)
-            serialized_record = RecordSerializer(attendance_record, many = True)
-            json_record = JSONRenderer().render(serialized_record.data)
-            print(f"attendance records = {json_record} and its type is {type(attendance_record)}")
-            return Response(data = json_record, status= status.HTTP_200_OK)
+            attendance_record_queryset = AttendanceRecord.objects.filter(teacher_username = username)
+            attendance_record_serialized= RecordSerializer(attendance_record_queryset, many = True)
+            attendance_record_bytes = JSONRenderer().render(attendance_record_serialized.data)
+
+            attendance_record_string = attendance_record_bytes.decode('utf-8')
+            attendance_record_json_object = json.loads(attendance_record_string)
+            attendance_record_json_string = json.dumps(attendance_record_json_object)
+            print(f"json_record = {attendance_record_json_string} and its type is {type(attendance_record_json_string)}")
+            print(f"json_record = {attendance_record_json_object} and its type is {type(attendance_record_json_object)}")
+
+            return Response(data = attendance_record_json_object, status= status.HTTP_200_OK)
 
         except AttendanceRecord.DoesNotExist as err:
             error_name = err
