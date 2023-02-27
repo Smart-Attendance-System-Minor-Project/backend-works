@@ -55,7 +55,7 @@ def teacherRegistration(request):
             # print("here")
             return Response(data = return_json, status= status.HTTP_403_FORBIDDEN, content_type= "application/json")
         if password != confirm_password:
-            return_json = json.dumps({'error':'The entered passwords do not match.'})
+            return_json = {'error':'The entered passwords do not match.'}
             return Response(data = return_json, status= status.HTTP_400_BAD_REQUEST)
         
         try:
@@ -68,7 +68,7 @@ def teacherRegistration(request):
 
         except IntegrityError:
             # print("Inside the integrity error")
-            failure_data = {"error": "Username already exists. Please enter a unique username."}
+            failure_data = {"error": "Username already exists."}
             return Response(data = failure_data, status= status.HTTP_409_CONFLICT)
        
 
