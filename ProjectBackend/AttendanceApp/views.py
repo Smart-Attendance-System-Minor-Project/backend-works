@@ -62,11 +62,13 @@ def teacherRegistration(request):
             # print("inside the try block")
             teacher = Teacher(username = username, email = email, password = password, full_name = full_name)
             teacher.save()
-            return HttpResponse("success")
+            return_json = {"success": "Successfully Registered."}
+            return Response(data = failure_data, status= status.HTTP_409_CONFLICT)
+            
 
         except IntegrityError:
             # print("Inside the integrity error")
-            failure_data = {"message": "Username already exists. Please enter a unique username."}
+            failure_data = {"error": "Username already exists. Please enter a unique username."}
             return Response(data = failure_data, status= status.HTTP_409_CONFLICT)
        
 
@@ -97,7 +99,7 @@ def login(request):
                 return Response(data= json_data_success, status= status.HTTP_200_OK)
         
         else:
-            json_data_failure = {'failure': 'invalid username or password'}
+            json_data_failure = {'error': 'Invalid Credentials'}
             return Response(data = json_data_failure, status = status.HTTP_403_FORBIDDEN)
 
 @api_view(['POST'])
@@ -114,7 +116,7 @@ def forgotPassword(request):
         #     print(type(i))
         # print(all_user_emails)
         if email_dct not in all_user_emails:
-            return_data = {'failure': 'Please enter your campus email or contact the department.'}
+            return_data = {'error': 'Please enter your campus email or contact the department.'}
             return Response(data = return_data, status= status.HTTP_403_FORBIDDEN)
         
         #this needs to modified..........
@@ -141,22 +143,22 @@ def validateOTP(request):
             otp = otp_data.otp
             time_duration = current_time - int(otp_data.time)
             if time_duration > 120:
-                failure_message = {'message': 'otp expired'}
+                failure_message = {'error': 'otp expired'}
                 otp_data.delete()
                 return Response(data = failure_message, status= status.HTTP_410_GONE)
 
             if entered_otp == otp:
-                success_message = {'message': 'otp verified successfully.'}
+                success_message = {'success': 'otp verified successfully.'}
                 otp_data.delete()
                 return Response(data = success_message, status= status.HTTP_200_OK)
             
             else:
-                failure_message = {'message': 'invalid otp.'}
+                failure_message = {'error': 'invalid otp.'}
                 return Response(data = failure_message, status= status.HTTP_401_UNAUTHORIZED)
 
 
         except OneTimePassword.DoesNotExist:
-            failure_message = {'message': f'OTP was not requested by {entered_email} or it expired.'}
+            failure_message = {'error': f'OTP was not requested by {entered_email} or it expired.'}
             return Response(data = failure_message, status = status.HTTP_410_GONE)
 
 
@@ -182,7 +184,7 @@ def passwordReset(request):
             return Response(data = success_message, status= status.HTTP_200_OK)
         
         except Teacher.DoesNotExist:
-            failure_message = {'failure': 'invalid email. Please enter your college email or contact the department.'}
+            failure_message = {'error': 'invalid email. Please enter your college email or contact the department.'}
             return Response(data = failure_message, status= status.HTTP_403_FORBIDDEN)
             
 
@@ -213,7 +215,7 @@ def viewClasses(request):
 
     
     except Teacher.DoesNotExist:
-        failure_message = {'failure': f'invalid username. Teacher with username {username} does not exist.'}
+        failure_message = {'error': f'invalid username. Teacher with username {username} does not exist.'}
         return Response(data = failure_message, status= status.HTTP_403_FORBIDDEN)
 
 
@@ -251,15 +253,15 @@ def addClass(request):
                 teacher.classes = classes
                 # teacher.classes = ""
                 teacher.save()
-                success_message = {'message': f'class {class_name} added successfully.'}
+                success_message = {'success': f'class {class_name} added successfully.'}
                 return Response(data = success_message, status = status.HTTP_200_OK)
             
             else:
-                message = {'message': f'class {class_name} - {subject} - {class_type} already exists.'}
+                message = {'error': f'class {class_name} - {subject} - {class_type} already exists.'}
                 return Response(data = message, status = status.HTTP_208_ALREADY_REPORTED)
 
         except Teacher.DoesNotExist:
-            failure_message = {'message': f'teacher with username {username} does not exist.'}
+            failure_message = {'error': f'teacher with username {username} does not exist.'}
             return Response(data = failure_message, status= status.HTTP_403_FORBIDDEN)
 
 
@@ -295,16 +297,17 @@ def saveRecord(request):
             # print("type of record.attendance_record = ", type(record.attendance_record))
             # type of record.attendance_record =  <class 'str'>
             #json.dumps(x) = x lai json string ma dump gar vai
-            record.attendance_record = record.attendance_record + ', ' + json.dumps(attendance_record)
+            date = next(iter(attendance_record.keys()))
+            record.attendance_record[date] = attendance_record[date]
             record.save()
-            message = {'message': 'Attendance taken successfully.'}
+            message = {'success': 'Attendance taken successfully.'}
             return Response (data = message, status= status.HTTP_200_OK)
                        
         except AttendanceRecord.DoesNotExist as err:
             error_name = err
             print("error = ", error_name)
-            AttendanceRecord.objects.create(teacher_username = teacher_username, class_name = class_name, class_type = class_type, subject = subject, attendance_record = json.dumps(attendance_record))
-            message = {'message': 'Attendance taken successfully.'}
+            AttendanceRecord.objects.create(teacher_username = teacher_username, class_name = class_name, class_type = class_type, subject = subject, attendance_record = attendance_record)
+            message = {'success': 'Attendance taken successfully.'}
             return Response(data = message, status= status.HTTP_200_OK)
             
 
@@ -331,6 +334,6 @@ def getRecords(request):
         except AttendanceRecord.DoesNotExist as err:
             error_name = err
             print("error = ", error_name)
-            message = {'failure': f'Error! {error_name}. No data exists for the given details.'}
+            message = {'error': f'Error! {error_name}. No data exists for the given details.'}
             return Response(message, status = status.HTTP_204_NO_CONTENT)
 
