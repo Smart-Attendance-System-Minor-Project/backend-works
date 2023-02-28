@@ -1,6 +1,4 @@
-import ast, json
-
-teacher_email_list = ['pratikdahal05@gmail.com', 'imrajeshneupane@gmail.com', 'jharahul968@gmail.com']
+teacher_email_list = ['pratikdahal05@gmail.com', 'imrajeshneupane@gmail.com', 'jharahul968@gmail.com', '076bct055.rajesh@pcampus.edu.np']
 
 def returnPresence(record):
     print(f"record = {record} and type(record) = {type(record)}")

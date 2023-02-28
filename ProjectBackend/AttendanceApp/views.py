@@ -50,26 +50,24 @@ def teacherRegistration(request):
         print(f"username = {username} and type(username) = {type(username)}")
 
         if email not in teacher_email_list:
-            # return_json = json.dumps({'status_code':'403','error':'Please register with your college mail id or contact department.'})
-            return_json = {'status_code':'403','error':'Please register with your college mail id or contact department.'}
+            message = {'error':'Please register with your college mail id or contact department.'}
             # print("here")
-            return Response(data = return_json, status= status.HTTP_403_FORBIDDEN, content_type= "application/json")
+            return Response(data = message, status= status.HTTP_403_FORBIDDEN, content_type= "application/json")
         if password != confirm_password:
-            return_json = {'error':'The entered passwords do not match.'}
-            return Response(data = return_json, status= status.HTTP_400_BAD_REQUEST)
+            message = {'error':'The entered passwords do not match.'}
+            return Response(data = message, status= status.HTTP_400_BAD_REQUEST)
         
         try:
             # print("inside the try block")
-            teacher = Teacher(username = username, email = email, password = password, full_name = full_name)
-            teacher.save()
-            return_json = {"success": "Successfully Registered."}
-            return Response(data = failure_data, status= status.HTTP_409_CONFLICT)
+            Teacher.objects.create(username = username, email = email, password = password, full_name = full_name)
+            return_json = {'success': 'Successfully Registered.'}
+            return Response(data = return_json, status= status.HTTP_200_OK)
             
 
         except IntegrityError:
             # print("Inside the integrity error")
-            failure_data = {"error": "Username already exists."}
-            return Response(data = failure_data, status= status.HTTP_409_CONFLICT)
+            message = {'error': 'Username already exists.'}
+            return Response(data = message, status= status.HTTP_409_CONFLICT)
        
 
 @csrf_exempt
@@ -95,12 +93,12 @@ def login(request):
                 #the above line of code generates a secure json web token
                 #with the given credentials which are user_id and random_token
                 refresh = RefreshToken.for_user(teacher)
-                json_data_success = {'success': f'welcome {teacher.full_name} sir', 'refresh':str(refresh), 'access':str(refresh.access_token)}
-                return Response(data= json_data_success, status= status.HTTP_200_OK)
+                message = {'success': f'welcome {teacher.full_name} sir', 'refresh':str(refresh), 'access':str(refresh.access_token)}
+                return Response(data= message, status= status.HTTP_200_OK)
         
         else:
-            json_data_failure = {'error': 'Invalid Credentials'}
-            return Response(data = json_data_failure, status = status.HTTP_403_FORBIDDEN)
+            message = {'error': 'Invalid Credentials'}
+            return Response(data = message, status = status.HTTP_403_FORBIDDEN)
 
 @api_view(['POST'])
 @csrf_exempt
@@ -116,8 +114,8 @@ def forgotPassword(request):
         #     print(type(i))
         # print(all_user_emails)
         if email_dct not in all_user_emails:
-            return_data = {'error': 'Please enter your campus email or contact the department.'}
-            return Response(data = return_data, status= status.HTTP_403_FORBIDDEN)
+            message = {'error': 'Please enter your campus email or contact the department.'}
+            return Response(data = message, status= status.HTTP_403_FORBIDDEN)
         
         #this needs to modified..........
         # global otp
@@ -125,10 +123,10 @@ def forgotPassword(request):
         otp = random.randint(100000, 999999)
         print("otp  = ", otp)
         OneTimePassword.objects.create(email = email, otp = otp, time = int(time.time()))
-        send_mail("Password Reset", f"Your OTP is {otp}", 'mail.ioehub@gmail.com', [f'{email}'], fail_silently= False,)
+        send_mail("Password Reset", f"Your OTP is {otp}. Please use it to verify your email.", 'mail.ioehub@gmail.com', [f'{email}'], fail_silently= False,)
         #if fail_silently is set to True, you'll get no log of error messages.
-        return_data = {'success': f'An otp has been sent to {email}. Please enter the otp and reset your password.'}
-        return Response(data = return_data, status= status.HTTP_200_OK)
+        message = {'success': f'An otp has been sent to {email}. Please enter the otp and reset your password.'}
+        return Response(data = message, status= status.HTTP_200_OK)
         #the user is directed to /otp_validation after this
 
 @api_view(['POST'])
@@ -143,23 +141,23 @@ def validateOTP(request):
             otp = otp_data.otp
             time_duration = current_time - int(otp_data.time)
             if time_duration > 120:
-                failure_message = {'error': 'otp expired'}
+                message = {'error': 'otp expired'}
                 otp_data.delete()
-                return Response(data = failure_message, status= status.HTTP_410_GONE)
+                return Response(data = message, status= status.HTTP_410_GONE)
 
             if entered_otp == otp:
-                success_message = {'success': 'otp verified successfully.'}
+                message = {'success': 'otp verified successfully.'}
                 otp_data.delete()
-                return Response(data = success_message, status= status.HTTP_200_OK)
+                return Response(data = message, status= status.HTTP_200_OK)
             
             else:
-                failure_message = {'error': 'invalid otp.'}
-                return Response(data = failure_message, status= status.HTTP_401_UNAUTHORIZED)
+                message = {'error': 'invalid otp.'}
+                return Response(data = message, status= status.HTTP_401_UNAUTHORIZED)
 
 
         except OneTimePassword.DoesNotExist:
-            failure_message = {'error': f'OTP was not requested by {entered_email} or it expired.'}
-            return Response(data = failure_message, status = status.HTTP_410_GONE)
+            message = {'error': f'OTP was not requested by {entered_email} or it expired.'}
+            return Response(data = message, status = status.HTTP_410_GONE)
 
 
 @api_view(['POST'])
@@ -170,8 +168,8 @@ def passwordReset(request):
         entered_password = request.data['password']
         confirm_password = request.data['confirm_password']
         if entered_password != confirm_password:
-            failure_message = {'failure': 'the entered password do not match.'}
-            return Response(data = failure_message, status= status.HTTP_403_FORBIDDEN)
+            message = {'failure': 'the entered password do not match.'}
+            return Response(data = message, status= status.HTTP_403_FORBIDDEN)
         
         
 
