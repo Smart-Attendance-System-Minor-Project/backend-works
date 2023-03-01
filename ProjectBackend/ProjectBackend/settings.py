@@ -1,3 +1,4 @@
+from datetime import timedelta
 """
 Django settings for ProjectBackend project.
 
@@ -29,9 +30,10 @@ ALLOWED_HOSTS = ['prat051.pythonanywhere.com', '127.0.0.1']
 
 
 # Application definition
+AUTH_USER_MODEL = 'AttendanceApp.Teacher'
 
 INSTALLED_APPS = [
-    'AttendanceApp',
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -39,9 +41,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'corsheaders',
     'rest_framework_simplejwt',
-    'api'
+    'corsheaders',
+    'AttendanceApp',
 ]
 
 MIDDLEWARE = [
@@ -106,24 +108,24 @@ WSGI_APPLICATION = 'ProjectBackend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
-DATABASES =  {
-    'default':
-    {
-        'ENGINE' : 'django.db.backends.mysql',
-        'NAME' : 'prat051$default',
-        'USER' : 'prat051',
-        'PASSWORD' : 'adminadmin',
-        'HOST' : 'prat051.mysql.pythonanywhere-services.com',
-        'PORT' : '3306'
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# DATABASES =  {
+#     'default':
+#     {
+#         'ENGINE' : 'django.db.backends.mysql',
+#         'NAME' : 'prat051$default',
+#         'USER' : 'prat051',
+#         'PASSWORD' : 'adminadmin',
+#         'HOST' : 'prat051.mysql.pythonanywhere-services.com',
+#         'PORT' : '3306'
+#     }
+# }
 
 
 # Password validation
@@ -177,12 +179,12 @@ EMAIL_USE_TLS = True
 
 
 # ----------------------------
-from datetime import timedelta
+
 
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=30),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=30),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=50),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": False,
     "UPDATE_LAST_LOGIN": False,

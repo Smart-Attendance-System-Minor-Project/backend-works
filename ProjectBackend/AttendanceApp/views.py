@@ -12,9 +12,9 @@ import random, time, ast, json
 from django.core.mail import send_mail
 from django.db import IntegrityError
 from .validation import teacher_email_list
-
 from rest_framework_simplejwt.tokens import RefreshToken
-
+import jwt
+from django.contrib.auth.hashers import make_password
 
 #ast is an abstract syntax tree and it is used to convert one data type to the other
 
@@ -59,7 +59,9 @@ def teacherRegistration(request):
         
         try:
             # print("inside the try block")
-            Teacher.objects.create(username = username, email = email, password = password, full_name = full_name)
+            hashed_password = make_password(password,salt=username)
+            print("hashed_password = ", hashed_password)
+            Teacher.objects.create(username = username, email = email, password = hashed_password, full_name = full_name)
             return_json = {'success': 'Successfully Registered.'}
             return Response(data = return_json, status= status.HTTP_200_OK)
             
@@ -77,8 +79,9 @@ def login(request):
         login_details = request.data
         username = login_details['username']
         password = login_details['password']
+        hashed_password = make_password(password,salt=username)
         try:
-            teacher = Teacher.objects.get(username = username, password = password)
+            teacher = Teacher.objects.get(username = username, password = hashed_password)
         except:
             teacher = None
         
@@ -92,8 +95,14 @@ def login(request):
                 # token = jwt_encode_handler(payload)
                 #the above line of code generates a secure json web token
                 #with the given credentials which are user_id and random_token
+
                 refresh = RefreshToken.for_user(teacher)
+                print("refresh = ", refresh, "type = ", type(refresh))
                 message = {'success': f'welcome {teacher.full_name} sir', 'refresh':str(refresh), 'access':str(refresh.access_token)}
+                jwt_token = str(refresh.access_token)
+                jwt_payload = jwt.decode(jwt_token, verify=False)
+                print("jwt-payload = ", jwt_payload)
+                print("request.user = ", request.user)
                 return Response(data= message, status= status.HTTP_200_OK)
         
         else:
@@ -170,13 +179,15 @@ def passwordReset(request):
         if entered_password != confirm_password:
             message = {'failure': 'the entered password do not match.'}
             return Response(data = message, status= status.HTTP_403_FORBIDDEN)
+
         
         
 
         #security concern. Hash these password
         try:
             teacher = Teacher.objects.get(email = entered_email)
-            teacher.password = entered_password
+            hashed_password = make_password(entered_password, salt = teacher.username)
+            teacher.password = hashed_password
             teacher.save(update_fields = ['password'])
             success_message = {'success': 'password changed successfully'}
             return Response(data = success_message, status= status.HTTP_200_OK)
@@ -187,18 +198,9 @@ def passwordReset(request):
             
 
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def seeUsers(request):
-    teacher = Teacher.objects.all()
-    teacher_string = '' 
-
-    for i in teacher:
-        teacher_string += str(i.username) + "  " + str(i.full_name)+ '<br>'
-    return HttpResponse(teacher_string)
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def viewClasses(request):
     username = request.data['username']
     try:
@@ -335,3 +337,23 @@ def getRecords(request):
             message = {'error': f'Error! {error_name}. No data exists for the given details.'}
             return Response(message, status = status.HTTP_204_NO_CONTENT)
 
+@api_view(['GET'])
+@permission_classes([AllowAny,])
+def checkview(request):
+    print(request.user)
+    return Response('hello world')
+
+
+# @authentication_classes([JWTAuthentication, ])
+@api_view(['GET'])
+@permission_classes((IsAuthenticated, ))
+def seeUsers(request):
+    print("hello world")
+    teacher = Teacher.objects.all()
+    teacher_string = '' 
+
+    for i in teacher:
+        teacher_string += str(i.username) + "  " + str(i.full_name)+ '<br>'
+    print("request.user = ", request.user)
+    return HttpResponse(teacher_string)
+    

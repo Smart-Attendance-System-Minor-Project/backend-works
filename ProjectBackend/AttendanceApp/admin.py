@@ -1,9 +1,12 @@
 from django.contrib import admin
 from .models import Teacher, AttendanceRecord
+from django.contrib.auth.admin import UserAdmin
 # Register your models here.
 @admin.register(Teacher)
-class TeacherAdmin(admin.ModelAdmin):
+class TeacherAdmin(UserAdmin):
     list_display = ['username', 'email']
+
+# admin.site.register(Teacher)
 
 @admin.register(AttendanceRecord)
 class AttendanceRecord(admin.ModelAdmin):
