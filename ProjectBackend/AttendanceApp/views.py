@@ -4,7 +4,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from .serializers import RecordSerializer
 from rest_framework.renderers import JSONRenderer
 from .models import Teacher, OneTimePassword, AttendanceRecord
@@ -222,7 +222,7 @@ def viewClasses(request):
 
 #login should be required for this
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def addClass(request):
     if request.method == 'POST':
         class_details = request.data
@@ -276,7 +276,7 @@ def viewOTP(request):
     return HttpResponse(f"OTPs are printed as {otp_list}")
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([])
 def saveRecord(request):
     if request.method == 'POST':
         record_details = request.data
@@ -312,7 +312,7 @@ def saveRecord(request):
             
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def getRecords(request):
     if request.method == 'POST':
         record_details = request.data
@@ -336,12 +336,6 @@ def getRecords(request):
             print("error = ", error_name)
             message = {'error': f'Error! {error_name}. No data exists for the given details.'}
             return Response(message, status = status.HTTP_204_NO_CONTENT)
-
-@api_view(['GET'])
-@permission_classes([AllowAny,])
-def checkview(request):
-    print(request.user)
-    return Response('hello world')
 
 
 # @authentication_classes([JWTAuthentication, ])
