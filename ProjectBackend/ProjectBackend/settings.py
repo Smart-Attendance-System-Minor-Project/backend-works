@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-6%@n7pj09j7)&)n#*q01&^e4pm!u6vv$bpi-*1oq*p)2m@#vui
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['prat051.pythonanywhere.com', '127.0.0.1']
+ALLOWED_HOSTS = ['wellattend.pythonanywhere.com', '127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -122,7 +122,7 @@ DATABASES =  {
         'NAME' : 'prat051$wellattend',
         'USER' : 'prat051',
         'PASSWORD' : 'wellattend',
-        'HOST' : 'prat051.mysql.pythonanywhere-services.com',
+        'HOST' : 'wellattend.mysql.pythonanywhere-services.com',
         'PORT' : '3306'
     }
 }
