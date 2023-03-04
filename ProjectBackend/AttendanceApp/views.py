@@ -376,7 +376,8 @@ def warnStudents(request):
     student_name = details.get('student_name')
     subject_name = details.get('subject_name')
     class_name = details.get('class_name')
-    email_body = f'Dear {student_name} \n\n. This is to inform you that your presence in the class {class_name}-{subject_name} is poor. Please attend class regularly. \n \n Total class = {total_class} \n Total absent = {total_absent} \n \n' + message
+    presence_percent = (int(total_class) - int(total_absent))/ int(total_class)
+    email_body = f'Dear {student_name}, \n\nThis is to inform you that your presence in the class {class_name}-{subject_name} is poor. Please attend class regularly. \n \nTotal class = {total_class} \nTotal absent = {total_absent} \nPresence percentage = {presence_percent}\n \n' + message + '\n\nThis is an automated email. Please do not reply.'
     send_mail(subject, email_body, 'mail.ioehub@gmail.com', [f'{email}'], fail_silently= False,)
 
     return_message = {'success': 'student warned successfully'}
