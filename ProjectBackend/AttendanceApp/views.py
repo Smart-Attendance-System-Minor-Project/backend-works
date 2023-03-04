@@ -11,7 +11,7 @@ from .models import Teacher, OneTimePassword, AttendanceRecord
 import random, time, ast, json
 from django.core.mail import send_mail
 from django.db import IntegrityError
-from .validation import teacher_email_list
+from .validation import teacher_email_list, isValidEmail
 from rest_framework_simplejwt.tokens import RefreshToken
 import jwt
 from django.contrib.auth.hashers import make_password
@@ -49,13 +49,16 @@ def teacherRegistration(request):
         full_name = registration_details['full_name']
         print(f"username = {username} and type(username) = {type(username)}")
 
-        if email not in teacher_email_list:
+        if email not in teacher_email_list and not isValidEmail(email):
             message = {'error':'Please register with your college mail id or contact department.'}
             # print("here")
             return Response(data = message, status= status.HTTP_403_FORBIDDEN, content_type= "application/json")
+        
         if password != confirm_password:
             message = {'error':'The entered passwords do not match.'}
             return Response(data = message, status= status.HTTP_400_BAD_REQUEST)
+        
+
         
         try:
             # print("inside the try block")
