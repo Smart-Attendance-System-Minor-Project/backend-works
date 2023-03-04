@@ -379,6 +379,9 @@ def warnStudents(request):
     email_body = f'Dear {student_name} \n\n. This is to inform you that your presence in the class {class_name}-{subject_name} is poor. Please attend class regularly. \n \n Total class = {total_class} \n Total absent = {total_absent} \n \n' + message
     send_mail(subject, email_body, 'mail.ioehub@gmail.com', [f'{email}'], fail_silently= False,)
 
+    return_message = {'success': 'student warned successfully'}
+    return Response(data = return_message, status= status.HTTP_200_OK)
+
 
 
 
