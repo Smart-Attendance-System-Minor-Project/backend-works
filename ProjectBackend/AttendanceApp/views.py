@@ -61,6 +61,7 @@ def teacherRegistration(request):
         OneTimePassword.objects.filter(email = email).delete()
         otp = random.randint(100000, 999999)
         OneTimePassword.objects.create(email = email, otp = otp, time = int(time.time()))
+        send_mail("Verify Email", f"Your OTP is {otp}. Please use it to verify your email for registration.", 'mail.ioehub@gmail.com', [f'{email}'], fail_silently= False,)
 
        
 @csrf_exempt
@@ -287,7 +288,7 @@ def viewOTP(request):
     return HttpResponse(f"OTPs are printed as {otp_list}")
 
 @api_view(['POST'])
-@permission_classes([])
+@permission_classes([IsAuthenticated])
 def saveRecord(request):
     if request.method == 'POST':
         record_details = request.data
@@ -351,7 +352,7 @@ def getRecords(request):
 
 # @authentication_classes([JWTAuthentication, ])
 @api_view(['GET'])
-@permission_classes((IsAuthenticated, ))
+@permission_classes([IsAuthenticated, ])
 def seeUsers(request):
     print("hello world")
     teacher = Teacher.objects.all()
@@ -361,4 +362,24 @@ def seeUsers(request):
         teacher_string += str(i.username) + "  " + str(i.full_name)+ '<br>'
     print("request.user = ", request.user)
     return HttpResponse(teacher_string)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def warnStudents(request):
+    details = request.data
+    email = details['email']
+    subject = details['subject']
+    message = details.get('message')
+    message = '' if message == None else message
+    total_absent = details.get('total_absent')
+    total_class = details.get('total_class')
+    student_name = details.get('student_name')
+    subject_name = details.get('subject_name')
+    class_name = details.get('class_name')
+    email_body = f'Dear {student_name} \n\n. This is to inform you that your presence in the class {class_name}-{subject_name} is poor. Please attend class regularly. \n \n Total class = {total_class} \n Total absent = {total_absent} \n \n' + message
+    send_mail(subject, email_body, 'mail.ioehub@gmail.com', [f'{email}'], fail_silently= False,)
+
+
+
+
     
