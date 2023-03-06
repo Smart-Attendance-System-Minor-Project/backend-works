@@ -60,8 +60,16 @@ def createUser(request):
         # print("inside the try block")
         hashed_password = make_password(password,salt=username)
         Teacher.objects.create(username = username, email = email, password = hashed_password, full_name = full_name)
-        return_json = {'success': 'Successfully Registered.'}
-        return Response(data = return_json, status= status.HTTP_200_OK)
+        teacher = Teacher.objects.get(username = username, email = email, password = hashed_password, full_name = full_name)
+        
+        refresh = RefreshToken.for_user(teacher)
+        print("refresh = ", refresh, "type = ", type(refresh))
+        message = {'success': f'Successfully registered {teacher.full_name} sir', 'refresh':str(refresh), 'access':str(refresh.access_token)}
+        jwt_token = str(refresh.access_token)
+        jwt_payload = jwt.decode(jwt_token, verify=False)
+        print("jwt-payload = ", jwt_payload)
+        print("request.user = ", request.user)
+        return Response(data = message, status= status.HTTP_200_OK)
         
 
     except IntegrityError as exc:
