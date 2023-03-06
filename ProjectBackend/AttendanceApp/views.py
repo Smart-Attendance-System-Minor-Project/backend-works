@@ -25,80 +25,59 @@ def helloUser(request):
 @csrf_exempt
 @api_view(['POST'])
 def teacherRegistration(request):
-    if request.method == 'POST':
-        registration_details = request.data
-        # registration_details = request.body
-        # print(f"registration details = {registration_details}")
-        # registration details = b'{"username": "sharma", "email": "sharma", "password": "sharma", "confirm_password": "sharma"}'
-        # print(f"type(registration details) =  {type(registration_details)} ")
-        #type(registration details) =  <class 'bytes'>
-        # print(f"request.data = {request.data}")
-        # request.data = {'username': 'sharma', 'email': 'sharma', 'password': 'sharma', 'confirm_password': 'sharma'}
-        # print("type(request.data) = ", type(request.data))
-        # type(request.data) =  <class 'dict'>
-        # strng = str(request.body)
-        # print(f"strng = {strng} and type(strng) = {type(strng)} ")
-        # strng = b'{"username": "sharma", "email": "sharma", "password": "sharma", "confirm_password": "sharma"}' and type(strng) = <class 'str'>
-        # registration_details = json.loads(registration_details)
-        # print(f"type(registration details) =  {type(registration_details)} ")
-        # type(registration details) =  <class 'dict'>
-        username = registration_details['username']
-        email = registration_details['email']
-        password = registration_details['password']
-        confirm_password = registration_details['confirm_password']
-        full_name = registration_details['full_name']
-        print(f"username = {username} and type(username) = {type(username)}")
-
-        if email not in teacher_email_list and not isValidEmail(email):
-            message = {'error':'Please register with your college mail id or contact department.'}
-            # print("here")
-            return Response(data = message, status= status.HTTP_403_FORBIDDEN, content_type= "application/json")
-        
-        if password != confirm_password:
-            message = {'error':'The entered passwords do not match.'}
-            return Response(data = message, status= status.HTTP_400_BAD_REQUEST)
-        
-        OneTimePassword.objects.filter(email = email).delete()
-        otp = random.randint(100000, 999999)
-        OneTimePassword.objects.create(email = email, otp = otp, time = int(time.time()))
-        send_mail("Verify Email", f"Your OTP is {otp}. Please use it to verify your email for registration.", 'mail.ioehub@gmail.com', [f'{email}'], fail_silently= False,)
-
-        message = {'success': 'otp sent successfully.'}
-        return Response (data = message, status= status.HTTP_200_OK)
+    registration_details = request.data
+    email = registration_details['email']
+    if email not in teacher_email_list and not isValidEmail(email):
+        message = {'error':'Please register with your college mail id or contact department.'}
+        return Response(data = message, status= status.HTTP_403_FORBIDDEN, content_type= "application/json")
+    
+    OneTimePassword.objects.filter(email = email).delete()
+    otp = random.randint(100000, 999999)
+    OneTimePassword.objects.create(email = email, otp = otp, time = int(time.time()))
+    send_mail("Verify Email", f"Your OTP is {otp}. Please use it to verify your email for registration.", 'mail.ioehub@gmail.com', [f'{email}'], fail_silently= False,)
+    message = {'success': 'otp sent successfully.'}
+    return Response (data = message, status= status.HTTP_200_OK)
 
        
 @csrf_exempt
 @api_view(['POST'])
 def createUser(request):
-    if request.method == 'POST':
-        registration_details = request.data
-        username = registration_details['username']
-        email = registration_details['email']
-        password = registration_details['password']
-        full_name = registration_details['full_name']
-        try:
-            # print("inside the try block")
-            hashed_password = make_password(password,salt=username)
-            print("hashed_password = ", hashed_password)
-            Teacher.objects.create(username = username, email = email, password = hashed_password, full_name = full_name)
-            return_json = {'success': 'Successfully Registered.'}
-            return Response(data = return_json, status= status.HTTP_200_OK)
-            
+    registration_details = request.data
+    username = registration_details['username']
+    email = registration_details['email']
+    password = registration_details['password']
+    confirm_password = registration_details['confirm_password']
+    full_name = registration_details['full_name']
 
-        except IntegrityError as exc:
-            exc.__class__.__name__
-            print(f"Error = {exc.__class__.__name__}.")
-            print("exc = ", exc)
-            if 'username' in str(exc):
-                message = {'Error: Username already exists'}
-            
-            elif 'email' in str(exc):
-                message = {'Error: An account already exists with this email.'}
-            
-            else:
-                message = {'Error: Unknown Integrity Error.'}
+    if email not in teacher_email_list and not isValidEmail(email):
+        message = {'error':'Please register with your college mail id or contact department.'}
+        return Response(data = message, status= status.HTTP_403_FORBIDDEN, content_type= "application/json")
+    
+    if password != confirm_password:
+        message = {'error':'The entered passwords do not match.'}
+        return Response(data = message, status= status.HTTP_400_BAD_REQUEST)
+    try:
+        # print("inside the try block")
+        hashed_password = make_password(password,salt=username)
+        Teacher.objects.create(username = username, email = email, password = hashed_password, full_name = full_name)
+        return_json = {'success': 'Successfully Registered.'}
+        return Response(data = return_json, status= status.HTTP_200_OK)
+        
 
-            return Response(data = message, status= status.HTTP_409_CONFLICT)
+    except IntegrityError as exc:
+        exc.__class__.__name__
+        print(f"Error = {exc.__class__.__name__}.")
+        print("exc = ", exc)
+        if 'username' in str(exc):
+            message = {'Error: Username already exists'}
+        
+        elif 'email' in str(exc):
+            message = {'Error: An account already exists with this email.'}
+        
+        else:
+            message = {'Error: Unknown Integrity Error.'}
+
+        return Response(data = message, status= status.HTTP_409_CONFLICT)
 
 
 @csrf_exempt
@@ -196,7 +175,7 @@ def passwordReset(request):
         entered_password = request.data['password']
         confirm_password = request.data['confirm_password']
         if entered_password != confirm_password:
-            message = {'failure': 'the entered password do not match.'}
+            message = {'error': 'the entered password do not match.'}
             return Response(data = message, status= status.HTTP_403_FORBIDDEN)
         
         try:
