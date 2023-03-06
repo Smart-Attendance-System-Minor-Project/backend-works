@@ -63,6 +63,9 @@ def teacherRegistration(request):
         OneTimePassword.objects.create(email = email, otp = otp, time = int(time.time()))
         send_mail("Verify Email", f"Your OTP is {otp}. Please use it to verify your email for registration.", 'mail.ioehub@gmail.com', [f'{email}'], fail_silently= False,)
 
+        message = {'success': 'otp sent successfully.'}
+        return Response (data = message, status= status.HTTP_200_OK)
+
        
 @csrf_exempt
 @api_view(['POST'])
@@ -297,7 +300,7 @@ def saveRecord(request):
         class_type = record_details['class_type'] #l or p
         subject = record_details['subject'] 
         attendance_record = record_details['attendance_record']
-        # print("attendance_record = ", attendance_record, "type(attendance_record) = ", type(attendance_record))
+        print("attendance_record = ", attendance_record, "type(attendance_record) = ", type(attendance_record))
         # type(attendance_record) =  <class 'dict'>
         try:
             # print("hola mundo")
@@ -311,6 +314,7 @@ def saveRecord(request):
             #json.dumps(x) = x lai json string ma dump gar vai
             date = next(iter(attendance_record.keys()))
             record.attendance_record[date] = attendance_record[date]
+            print("record.attendance_record = ", record.attendance_record)
             record.save()
             message = {'success': 'Attendance taken successfully.'}
             return Response (data = message, status= status.HTTP_200_OK)
@@ -376,8 +380,8 @@ def warnStudents(request):
     student_name = details.get('student_name')
     subject_name = details.get('subject_name')
     class_name = details.get('class_name')
-    presence_percent = (int(total_class) - int(total_absent))/ int(total_class)
-    email_body = f'Dear {student_name}, \n\nThis is to inform you that your presence in the class {class_name}-{subject_name} is poor. Please attend class regularly. \n \nTotal class = {total_class} \nTotal absent = {total_absent} \nPresence percentage = {presence_percent}\n \n' + message + '\n\nThis is an automated email. Please do not reply.'
+    presence_percent = round((int(total_class) - int(total_absent))*100/ int(total_class), 2)
+    email_body = f'Dear {student_name}, \n\nThis is to inform you that your presence in the class {class_name}-{subject_name} is poor. Please attend class regularly. \n \nTotal class = {total_class} \nTotal absent = {total_absent} \nPresence percentage = {presence_percent}%\n \n' + message + '\n\nThis is an automated email. Please do not reply.'
     send_mail(subject, email_body, 'mail.ioehub@gmail.com', [f'{email}'], fail_silently= False,)
 
     return_message = {'success': 'student warned successfully'}
