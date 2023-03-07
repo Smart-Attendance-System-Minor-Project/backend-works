@@ -15,7 +15,7 @@ from .validation import teacher_email_list, isValidEmail
 from rest_framework_simplejwt.tokens import RefreshToken
 import jwt
 from django.contrib.auth.hashers import make_password
-
+from datetime import datetime
 #ast is an abstract syntax tree and it is used to convert one data type to the other
 
 # Create your views here.
@@ -320,6 +320,7 @@ def getRecords(request):
     if request.method == 'POST':
         record_details = request.data
         username = record_details['username']
+        class_only = record_details.get('class_only')
 
         try:
             attendance_record_queryset = AttendanceRecord.objects.filter(teacher_username = username)
@@ -332,6 +333,10 @@ def getRecords(request):
             print(f"json_record = {attendance_record_json_string} and its type is {type(attendance_record_json_string)}")
             print(f"json_record = {attendance_record_json_object} and its type is {type(attendance_record_json_object)}")
 
+            if class_only == "True":
+                del attendance_record_json_object['attendance_record']
+                del attendance_record_json_object['teacher_username']
+            
             return Response(data = attendance_record_json_object, status= status.HTTP_200_OK)
 
         except AttendanceRecord.DoesNotExist as err:
@@ -375,6 +380,34 @@ def warnStudents(request):
     return Response(data = return_message, status= status.HTTP_200_OK)
 
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def returnRecentDate(request):
+    record_details = request.data
+    teacher_username = record_details['username']
+    class_name = record_details['class_name'] #for example 076bctcd
+    class_type = record_details['class_type'] #l or p
+    subject = record_details['subject'] 
+
+    class_details = AttendanceRecord.objects.get(teacher_username = teacher_username, class_name = class_name, class_type = class_type, subject = subject)
+
+    attendance_records = class_details.attendance_record
+    dates = list(attendance_records.keys()) 
+
+    # Convert each string date to a datetime object
+    datetime_dates = [datetime.strptime(date, "%m/%d/%Y") for date in dates]
+
+    # Find the latest date
+    latest_date = max(datetime_dates)
+
+    # Convert the latest date back to string format
+    latest_date_str = latest_date.strftime("%m/%d/%Y")
+
+    print("Latest date:", latest_date_str)
+    message = {'latest_date': latest_date_str}
+    return Response(data = message, status= status.HTTP_200_OK)
+
+    
 
 
     

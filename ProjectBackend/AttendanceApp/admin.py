@@ -3,7 +3,7 @@ from .models import Teacher, AttendanceRecord
 from django.contrib.auth.admin import UserAdmin
 # Register your models here.
 @admin.register(Teacher)
-class TeacherAdmin(UserAdmin):
+class Teacher(admin.ModelAdmin):
     list_display = ['username', 'email']
 
 # admin.site.register(Teacher)

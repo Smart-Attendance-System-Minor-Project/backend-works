@@ -32,7 +32,7 @@ class OneTimePassword(models.Model):
 
 class AttendanceRecord(models.Model):
     teacher_username = models.CharField(max_length= 20)
-    class_name = models.CharField(max_length= 40) #this will be in the format o76bctab
+    class_name = models.CharField(max_length= 40) #this will be in the format 076bctab
     class_type = models.CharField(max_length = 20)
     subject = models.CharField(max_length = 40)
     attendance_record = models.JSONField() 
