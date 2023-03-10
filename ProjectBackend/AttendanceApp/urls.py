@@ -17,5 +17,6 @@ urlpatterns = [
     path('create_user/', views.createUser),
     path('warn/', views.warnStudents),
     path('recent_date/', views.returnRecentDate),
+    path('verify_token/', views.isTokenValid),
     
 ]

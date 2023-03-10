@@ -4,7 +4,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from .serializers import RecordSerializer
 from rest_framework.renderers import JSONRenderer
 from .models import Teacher, OneTimePassword, AttendanceRecord
@@ -91,112 +91,113 @@ def createUser(request):
 @csrf_exempt
 @api_view(['POST'])
 def login(request):
-    if request.method == 'POST':
-        login_details = request.data
-        username = login_details['username']
-        password = login_details['password']
-        hashed_password = make_password(password, salt=username)
-        try:
-            teacher = Teacher.objects.get(username = username, password = hashed_password)
-        except:
-            teacher = None
-        
-        if teacher is not None:
-            refresh = RefreshToken.for_user(teacher)
-            print("refresh = ", refresh, "type = ", type(refresh))
-            message = {'success': f'welcome {teacher.full_name} sir', 'refresh':str(refresh), 'access':str(refresh.access_token)}
-            jwt_token = str(refresh.access_token)
-            jwt_payload = jwt.decode(jwt_token, verify=False)
-            print("jwt-payload = ", jwt_payload)
-            print("request.user = ", request.user)
-            return Response(data= message, status= status.HTTP_200_OK)
-        
-        else:
-            message = {'error': 'Invalid Credentials'}
-            return Response(data = message, status = status.HTTP_403_FORBIDDEN)
+    login_details = request.data
+    username = login_details['username']
+    password = login_details['password']
+    hashed_password = make_password(password, salt=username)
+    try:
+        teacher = Teacher.objects.get(username = username, password = hashed_password)
+    except:
+        teacher = None
+    
+    if teacher is not None:
+        refresh = RefreshToken.for_user(teacher)
+        print("refresh = ", refresh, "type = ", type(refresh))
+        message = {'success': f'welcome {teacher.full_name} sir', 'refresh':str(refresh), 'access':str(refresh.access_token)}
+        jwt_token = str(refresh.access_token)
+        jwt_payload = jwt.decode(jwt_token, verify=False)
+        print("jwt-payload = ", jwt_payload)
+        print("request.user = ", request.user)
+        print(f"remaining time = {jwt_payload['exp'] - time.time()}")
+        return Response(data= message, status= status.HTTP_200_OK)
+    
+    else:
+        message = {'error': 'Invalid Credentials'}
+        return Response(data = message, status = status.HTTP_403_FORBIDDEN)
+
 
 @api_view(['POST'])
 @csrf_exempt
 def forgotPassword(request):
-    if request.method == 'POST':
-        email = request.data['email']
-        # print("email = ", email, "type(email) = ", type(email))
-        email_dct = {'email': email}
-        all_user_emails = Teacher.objects.values('email')
+    email = request.data['email']
+    # print("email = ", email, "type(email) = ", type(email))
+    email_dct = {'email': email}
+    all_user_emails = Teacher.objects.values('email')
 
-        # for i in all_user_emails:
-        #     print(i)
-        #     print(type(i))
-        # print(all_user_emails)
-        if email_dct not in all_user_emails:
-            message = {'error': 'Please enter your campus email or contact the department.'}
-            return Response(data = message, status= status.HTTP_403_FORBIDDEN)
-        
-        #this needs to modified..........
-        # global otp
-        OneTimePassword.objects.filter(email = email).delete()
-        otp = random.randint(100000, 999999)
-        print("otp  = ", otp)
-        OneTimePassword.objects.create(email = email, otp = otp, time = int(time.time()))
-        send_mail("Password Reset", f"Your OTP is {otp}. Please use it to verify your email.", 'mail.ioehub@gmail.com', [f'{email}'], fail_silently= False,)
-        #if fail_silently is set to True, you'll get no log of error messages.
-        message = {'success': f'An otp has been sent to {email}. Please enter the otp and reset your password.'}
-        return Response(data = message, status= status.HTTP_200_OK)
-        #the user is directed to /otp_validation after this
+    # for i in all_user_emails:
+    #     print(i)
+    #     print(type(i))
+    # print(all_user_emails)
+    if email_dct not in all_user_emails:
+        message = {'error': 'Please enter your campus email or contact the department.'}
+        return Response(data = message, status= status.HTTP_403_FORBIDDEN)
+    
+    #this needs to modified..........
+    # global otp
+    OneTimePassword.objects.filter(email = email).delete()
+    otp = random.randint(100000, 999999)
+    print("otp  = ", otp)
+    OneTimePassword.objects.create(email = email, otp = otp, time = int(time.time()))
+    send_mail("Password Reset", f"Your OTP is {otp}. Please use it to verify your email.", 'mail.ioehub@gmail.com', [f'{email}'], fail_silently= False,)
+    #if fail_silently is set to True, you'll get no log of error messages.
+    message = {'success': f'An otp has been sent to {email}. Please enter the otp and reset your password.'}
+    return Response(data = message, status= status.HTTP_200_OK)
+    #the user is directed to /otp_validation after this
+
 
 @api_view(['POST'])
 @csrf_exempt
 def validateOTP(request):
-    if request.method == 'POST':
-        entered_email = request.data['email']
-        entered_otp = request.data['otp']
-        try:
-            otp_data = OneTimePassword.objects.get(email = entered_email)
-            current_time = int(time.time())
-            otp = otp_data.otp
-            time_duration = current_time - int(otp_data.time)
-            if time_duration > 120:
-                message = {'error': 'otp expired'}
-                otp_data.delete()
-                return Response(data = message, status= status.HTTP_410_GONE)
+    entered_email = request.data['email']
+    entered_otp = request.data['otp']
+    try:
+        otp_data = OneTimePassword.objects.get(email = entered_email)
+        current_time = int(time.time())
+        otp = otp_data.otp
+        time_duration = current_time - int(otp_data.time)
+        if time_duration > 120:
+            message = {'error': 'otp expired'}
+            otp_data.delete()
+            return Response(data = message, status= status.HTTP_410_GONE)
 
-            if entered_otp == otp:
-                message = {'success': 'otp verified successfully.'}
-                otp_data.delete()
-                return Response(data = message, status= status.HTTP_200_OK)
-            
-            else:
-                message = {'error': 'invalid otp.'}
-                return Response(data = message, status= status.HTTP_401_UNAUTHORIZED)
+        if entered_otp == otp:
+            message = {'success': 'otp verified successfully.'}
+            otp_data.delete()
+            return Response(data = message, status= status.HTTP_200_OK)
+        
+        else:
+            message = {'error': 'invalid otp.'}
+            return Response(data = message, status= status.HTTP_401_UNAUTHORIZED)
 
 
-        except OneTimePassword.DoesNotExist:
-            message = {'error': f'OTP was not requested by {entered_email} or it expired.'}
-            return Response(data = message, status = status.HTTP_410_GONE)
+    except OneTimePassword.DoesNotExist:
+        message = {'error': f'OTP was not requested by {entered_email} or it expired.'}
+        return Response(data = message, status = status.HTTP_410_GONE)
+
 
 
 @api_view(['POST'])
 @csrf_exempt
 def passwordReset(request):
-    if request.method == 'POST':
-        entered_email = request.data['email']
-        entered_password = request.data['password']
-        confirm_password = request.data['confirm_password']
-        if entered_password != confirm_password:
-            message = {'error': 'the entered password do not match.'}
-            return Response(data = message, status= status.HTTP_403_FORBIDDEN)
-        
-        try:
-            teacher = Teacher.objects.get(email = entered_email)
-            hashed_password = make_password(entered_password, salt = teacher.username)
-            teacher.password = hashed_password
-            teacher.save(update_fields = ['password'])
-            success_message = {'success': 'password changed successfully'}
-            return Response(data = success_message, status= status.HTTP_200_OK)
-        
-        except Teacher.DoesNotExist:
-            failure_message = {'error': 'invalid email. Please enter your college email or contact the department.'}
-            return Response(data = failure_message, status= status.HTTP_403_FORBIDDEN)
+    entered_email = request.data['email']
+    entered_password = request.data['password']
+    confirm_password = request.data['confirm_password']
+    if entered_password != confirm_password:
+        message = {'error': 'the entered password do not match.'}
+        return Response(data = message, status= status.HTTP_403_FORBIDDEN)
+    
+    try:
+        teacher = Teacher.objects.get(email = entered_email)
+        hashed_password = make_password(entered_password, salt = teacher.username)
+        teacher.password = hashed_password
+        teacher.save(update_fields = ['password'])
+        success_message = {'success': 'password changed successfully'}
+        return Response(data = success_message, status= status.HTTP_200_OK)
+    
+    except Teacher.DoesNotExist:
+        failure_message = {'error': 'invalid email. Please enter your college email or contact the department.'}
+        return Response(data = failure_message, status= status.HTTP_403_FORBIDDEN)
+
             
 
 
@@ -226,45 +227,45 @@ def viewClasses(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def addClass(request):
-    if request.method == 'POST':
-        class_details = request.data
-        #username will be sent by the frontend
-        username = class_details['username']
-        batch = class_details['batch']
-        faculty = class_details['faculty']
-        subject = class_details['subject']
-        class_type = class_details['class_type']
-        section = class_details['section']
+    class_details = request.data
+    #username will be sent by the frontend
+    username = class_details['username']
+    batch = class_details['batch']
+    faculty = class_details['faculty']
+    subject = class_details['subject']
+    class_type = class_details['class_type']
+    section = class_details['section']
 
-        class_name = batch + faculty + section
-        
+    class_name = batch + faculty + section
+    
+    try:
+        teacher = Teacher.objects.get(username = username)
+        class_dct = {'subject': subject, 'class_name': class_name, 'class_type': class_type} 
+        # classes = teacher.classes
+        # print(f"classes = {classes} and type(classes) = {type(classes)}")
         try:
-            teacher = Teacher.objects.get(username = username)
-            class_dct = {'subject': subject, 'class_name': class_name, 'class_type': class_type} 
-            # classes = teacher.classes
-            # print(f"classes = {classes} and type(classes) = {type(classes)}")
-            try:
-                classes = ast.literal_eval(teacher.classes)
-            
-            except SyntaxError:
-                classes = list(teacher.classes)
-            
-            if class_dct not in classes:
-                classes.append(class_dct)
-                classes = str(classes)
-                teacher.classes = classes
-                # teacher.classes = ""
-                teacher.save()
-                success_message = {'success': f'class {class_name} added successfully.'}
-                return Response(data = success_message, status = status.HTTP_200_OK)
-            
-            else:
-                message = {'error': f'class {class_name} - {subject} - {class_type} already exists.'}
-                return Response(data = message, status = status.HTTP_208_ALREADY_REPORTED)
+            classes = ast.literal_eval(teacher.classes)
+        
+        except SyntaxError:
+            classes = list(teacher.classes)
+        
+        if class_dct not in classes:
+            classes.append(class_dct)
+            classes = str(classes)
+            teacher.classes = classes
+            # teacher.classes = ""
+            teacher.save()
+            success_message = {'success': f'class {class_name} added successfully.'}
+            return Response(data = success_message, status = status.HTTP_200_OK)
+        
+        else:
+            message = {'error': f'class {class_name} - {subject} - {class_type} already exists.'}
+            return Response(data = message, status = status.HTTP_208_ALREADY_REPORTED)
 
-        except Teacher.DoesNotExist:
-            failure_message = {'error': f'teacher with username {username} does not exist.'}
-            return Response(data = failure_message, status= status.HTTP_403_FORBIDDEN)
+    except Teacher.DoesNotExist:
+        failure_message = {'error': f'teacher with username {username} does not exist.'}
+        return Response(data = failure_message, status= status.HTTP_403_FORBIDDEN)
+
 
 
 @api_view(['GET'])
@@ -280,70 +281,70 @@ def viewOTP(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def saveRecord(request):
-    if request.method == 'POST':
-        record_details = request.data
-        teacher_username = record_details['username']
-        class_name = record_details['class_name'] #for example 076bctcd
-        class_type = record_details['class_type'] #l or p
-        subject = record_details['subject'] 
-        attendance_record = record_details['attendance_record']
-        print("attendance_record = ", attendance_record, "type(attendance_record) = ", type(attendance_record))
-        # type(attendance_record) =  <class 'dict'>
-        try:
-            # print("hola mundo")
-            record = AttendanceRecord.objects.get(teacher_username = teacher_username, class_name = class_name, class_type = class_type, subject = subject)
-            # record =  AttendanceRecord object (10)
-            # print("hola mundo")
-            # print("record = ", record)
-            # print("record.attendance_record = ", record.attendance_record)
-            # print("type of record.attendance_record = ", type(record.attendance_record))
-            # type of record.attendance_record =  <class 'str'>
-            #json.dumps(x) = x lai json string ma dump gar vai
-            date = next(iter(attendance_record.keys()))
-            record.attendance_record[date] = attendance_record[date]
-            print("record.attendance_record = ", record.attendance_record)
-            record.save()
-            message = {'success': 'Attendance taken successfully.'}
-            return Response (data = message, status= status.HTTP_200_OK)
-                       
-        except AttendanceRecord.DoesNotExist as err:
-            error_name = err
-            print("error = ", error_name)
-            AttendanceRecord.objects.create(teacher_username = teacher_username, class_name = class_name, class_type = class_type, subject = subject, attendance_record = attendance_record)
-            message = {'success': 'Attendance taken successfully.'}
-            return Response(data = message, status= status.HTTP_200_OK)
+    record_details = request.data
+    teacher_username = record_details['username']
+    class_name = record_details['class_name'] #for example 076bctcd
+    class_type = record_details['class_type'] #l or p
+    subject = record_details['subject'] 
+    attendance_record = record_details['attendance_record']
+    print("attendance_record = ", attendance_record, "type(attendance_record) = ", type(attendance_record))
+    # type(attendance_record) =  <class 'dict'>
+    try:
+        # print("hola mundo")
+        record = AttendanceRecord.objects.get(teacher_username = teacher_username, class_name = class_name, class_type = class_type, subject = subject)
+        # record =  AttendanceRecord object (10)
+        # print("hola mundo")
+        # print("record = ", record)
+        # print("record.attendance_record = ", record.attendance_record)
+        # print("type of record.attendance_record = ", type(record.attendance_record))
+        # type of record.attendance_record =  <class 'str'>
+        #json.dumps(x) = x lai json string ma dump gar vai
+        date = next(iter(attendance_record.keys()))
+        record.attendance_record[date] = attendance_record[date]
+        print("record.attendance_record = ", record.attendance_record)
+        record.save()
+        message = {'success': 'Attendance taken successfully.'}
+        return Response (data = message, status= status.HTTP_200_OK)
+                    
+    except AttendanceRecord.DoesNotExist as err:
+        error_name = err
+        print("error = ", error_name)
+        AttendanceRecord.objects.create(teacher_username = teacher_username, class_name = class_name, class_type = class_type, subject = subject, attendance_record = attendance_record)
+        message = {'success': 'Attendance taken successfully.'}
+        return Response(data = message, status= status.HTTP_200_OK)
+    
             
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def getRecords(request):
-    if request.method == 'POST':
-        record_details = request.data
-        username = record_details['username']
-        class_only = record_details.get('class_only')
+    record_details = request.data
+    username = record_details['username']
+    class_only = record_details.get('class_only')
 
-        try:
-            attendance_record_queryset = AttendanceRecord.objects.filter(teacher_username = username)
-            attendance_record_serialized= RecordSerializer(attendance_record_queryset, many = True)
-            attendance_record_bytes = JSONRenderer().render(attendance_record_serialized.data)
+    try:
+        attendance_record_queryset = AttendanceRecord.objects.filter(teacher_username = username)
+        attendance_record_serialized= RecordSerializer(attendance_record_queryset, many = True)
+        attendance_record_bytes = JSONRenderer().render(attendance_record_serialized.data)
 
-            attendance_record_string = attendance_record_bytes.decode('utf-8')
-            attendance_record_json_object = json.loads(attendance_record_string)
-            attendance_record_json_string = json.dumps(attendance_record_json_object)
-            print(f"json_record = {attendance_record_json_string} and its type is {type(attendance_record_json_string)}")
-            print(f"json_record = {attendance_record_json_object} and its type is {type(attendance_record_json_object)}")
+        attendance_record_string = attendance_record_bytes.decode('utf-8')
+        attendance_record_json_object = json.loads(attendance_record_string)
+        attendance_record_json_string = json.dumps(attendance_record_json_object)
+        print(f"json_record = {attendance_record_json_string} and its type is {type(attendance_record_json_string)}")
+        print(f"json_record = {attendance_record_json_object} and its type is {type(attendance_record_json_object)}")
 
-            if class_only == "True":
-                del attendance_record_json_object['attendance_record']
-                del attendance_record_json_object['teacher_username']
-            
-            return Response(data = attendance_record_json_object, status= status.HTTP_200_OK)
+        if class_only == "True":
+            del attendance_record_json_object['attendance_record']
+            del attendance_record_json_object['teacher_username']
+        
+        return Response(data = attendance_record_json_object, status= status.HTTP_200_OK)
 
-        except AttendanceRecord.DoesNotExist as err:
-            error_name = err
-            print("error = ", error_name)
-            message = {'error': f'Error! {error_name}. No data exists for the given details.'}
-            return Response(message, status = status.HTTP_204_NO_CONTENT)
+    except AttendanceRecord.DoesNotExist as err:
+        error_name = err
+        print("error = ", error_name)
+        message = {'error': f'Error! {error_name}. No data exists for the given details.'}
+        return Response(message, status = status.HTTP_204_NO_CONTENT)
+
 
 
 # @authentication_classes([JWTAuthentication, ])
@@ -408,6 +409,30 @@ def returnRecentDate(request):
     return Response(data = message, status= status.HTTP_200_OK)
 
     
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def isTokenValid(request):
+    # Get the Authorization header value
+    auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+    print(f'auth header = {auth_header}')
+    if auth_header.startswith('Bearer '):
+        # Get the JWT token from the Authorization header
+        jwt_token = auth_header.split(' ')[1]
+        jwt_payload = jwt.decode(jwt_token, verify=False)
+        exp_time = jwt_payload['exp']
+        remaining_time = exp_time - time.time()
+        if remaining_time > 0:
+            return_response = {'is_valid': 'True'}
+            return Response(data = return_response, status = status.HTTP_200_OK)
+        else:
+            return_response = {'is_valid': 'False'}
+            return Response(data = return_response, status = status.HTTP_401_UNAUTHORIZED)
 
+
+
+    else:
+        return_response = {'is_valid': 'False'}
+        return Response(data = return_response, status = status.HTTP_401_UNAUTHORIZED)
+    
 
     
