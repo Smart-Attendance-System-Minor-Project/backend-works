@@ -421,8 +421,6 @@ def isTokenValid(request):
             return_response = {'is_valid': 'False'}
             return Response(data = return_response, status = status.HTTP_401_UNAUTHORIZED)
 
-
-
     else:
         return_response = {'is_valid': 'False'}
         return Response(data = return_response, status = status.HTTP_401_UNAUTHORIZED)
@@ -444,6 +442,8 @@ def deleteClass(request):
     
     try:
         teacher = Teacher.objects.get(username = username)
+        records_to_be_deleted = AttendanceRecord.objects.filter(teacher_username = username, class_name = class_name, class_type = class_type, subject = subject)
+        records_to_be_deleted.delete()
         class_dct = {'subject': subject, 'class_name': class_name, 'class_type': class_type} 
         classes = teacher.classes
         print(f"classes = {classes} and type(classes) = {type(classes)}")
