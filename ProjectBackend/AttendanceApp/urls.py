@@ -18,5 +18,6 @@ urlpatterns = [
     path('warn/', views.warnStudents),
     path('recent_date/', views.returnRecentDate),
     path('verify_token/', views.isTokenValid),
+    path('delete_class/', views.deleteClass),
     
 ]

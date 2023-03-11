@@ -241,19 +241,12 @@ def addClass(request):
     try:
         teacher = Teacher.objects.get(username = username)
         class_dct = {'subject': subject, 'class_name': class_name, 'class_type': class_type} 
-        # classes = teacher.classes
-        # print(f"classes = {classes} and type(classes) = {type(classes)}")
-        try:
-            classes = ast.literal_eval(teacher.classes)
-        
-        except SyntaxError:
-            classes = list(teacher.classes)
-        
+        classes = teacher.classes
+        classes = [] if type(classes) == str else classes
+        print(f"classes = {classes} and type(classes) = {type(classes)}")
         if class_dct not in classes:
             classes.append(class_dct)
-            classes = str(classes)
             teacher.classes = classes
-            # teacher.classes = ""
             teacher.save()
             success_message = {'success': f'class {class_name} added successfully.'}
             return Response(data = success_message, status = status.HTTP_200_OK)
@@ -435,4 +428,32 @@ def isTokenValid(request):
         return Response(data = return_response, status = status.HTTP_401_UNAUTHORIZED)
     
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def deleteClass(request):
+    class_details = request.data
+    #username will be sent by the frontend
+    username = class_details['username']
+    batch = class_details['batch']
+    faculty = class_details['faculty']
+    subject = class_details['subject']
+    class_type = class_details['class_type']
+    section = class_details['section']
+
+    class_name = batch + faculty + section
     
+    try:
+        teacher = Teacher.objects.get(username = username)
+        class_dct = {'subject': subject, 'class_name': class_name, 'class_type': class_type} 
+        classes = teacher.classes
+        print(f"classes = {classes} and type(classes) = {type(classes)}")
+        if class_dct in classes:
+            classes.remove(class_dct)
+            teacher.classes = classes
+            teacher.save()
+        return_json = {'success': f'{class_name} - {subject} - {class_type} removed successfully.'}
+        return Response(data = return_json, status= status.HTTP_200_OK)
+    
+    except Teacher.DoesNotExist:
+        failure_message = {'error': f'teacher with username {username} does not exist.'}
+        return Response(data = failure_message, status= status.HTTP_403_FORBIDDEN)

@@ -8,7 +8,7 @@ class Teacher(AbstractUser):
     email = models.EmailField(max_length=40, unique=True)
     # password = models.CharField(max_length= 30)
     full_name = models.CharField(max_length=40)
-    classes = models.CharField(max_length= 10000)
+    classes = models.JSONField(default= list)
 
     USERNAME_FIELD = 'username'
     # is_active = models.BooleanField(default=True)
