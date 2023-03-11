@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from .serializers import RecordSerializer
 from rest_framework.renderers import JSONRenderer
 from .models import Teacher, OneTimePassword, AttendanceRecord
-import random, time, ast, json
+import random, time, json
 from django.core.mail import send_mail
 from django.db import IntegrityError
 from .validation import teacher_email_list, isValidEmail
@@ -208,14 +208,8 @@ def viewClasses(request):
     username = request.data['username']
     try:
         teacher = Teacher.objects.get(username = username)
-        try:
-            classes = ast.literal_eval(teacher.classes)
-            return Response(data = classes, status= status.HTTP_200_OK)
-
-        except SyntaxError:
-            classes = list(teacher.classes)
-            return Response(data = classes, status= status.HTTP_200_OK)
-
+        classes = teacher.classes
+        return Response(data = classes, status= status.HTTP_200_OK)
     
     except Teacher.DoesNotExist:
         failure_message = {'error': f'invalid username. Teacher with username {username} does not exist.'}
