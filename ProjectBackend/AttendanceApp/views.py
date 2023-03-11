@@ -451,9 +451,13 @@ def deleteClass(request):
             classes.remove(class_dct)
             teacher.classes = classes
             teacher.save()
-        return_json = {'success': f'{class_name} - {subject} - {class_type} removed successfully.'}
-        return Response(data = return_json, status= status.HTTP_200_OK)
-    
+            return_json = {'success': f'{class_name} - {subject} - {class_type} removed successfully.'}
+            return Response(data = return_json, status= status.HTTP_200_OK)
+
+        else:
+            return_json = {'failure': f'{class_name} - {subject} - {class_type} is not available in the class list.'}
+            return Response(data = return_json, status= status.HTTP_400_BAD_REQUEST)
+
     except Teacher.DoesNotExist:
         failure_message = {'error': f'teacher with username {username} does not exist.'}
         return Response(data = failure_message, status= status.HTTP_403_FORBIDDEN)
