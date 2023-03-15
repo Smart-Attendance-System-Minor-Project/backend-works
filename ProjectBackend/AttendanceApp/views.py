@@ -30,7 +30,7 @@ def teacherRegistration(request):
     if email not in teacher_email_list and not isValidEmail(email):
         message = {'error':'Please register with your college mail id or contact department.'}
         return Response(data = message, status= status.HTTP_403_FORBIDDEN, content_type= "application/json")
-    
+
     OneTimePassword.objects.filter(email = email).delete()
     otp = random.randint(100000, 999999)
     OneTimePassword.objects.create(email = email, otp = otp, time = int(time.time()))
@@ -38,7 +38,7 @@ def teacherRegistration(request):
     message = {'success': 'otp sent successfully.'}
     return Response (data = message, status= status.HTTP_200_OK)
 
-       
+
 @csrf_exempt
 @api_view(['POST'])
 def createUser(request):
@@ -52,7 +52,7 @@ def createUser(request):
     if email not in teacher_email_list and not isValidEmail(email):
         message = {'error':'Please register with your college mail id or contact department.'}
         return Response(data = message, status= status.HTTP_403_FORBIDDEN, content_type= "application/json")
-    
+
     if password != confirm_password:
         message = {'error':'The entered passwords do not match.'}
         return Response(data = message, status= status.HTTP_400_BAD_REQUEST)
@@ -61,16 +61,16 @@ def createUser(request):
         hashed_password = make_password(password,salt=username)
         Teacher.objects.create(username = username, email = email, password = hashed_password, full_name = full_name)
         teacher = Teacher.objects.get(username = username, email = email, password = hashed_password, full_name = full_name)
-        
+
         refresh = RefreshToken.for_user(teacher)
         print("refresh = ", refresh, "type = ", type(refresh))
-        message = {'success': f'Successfully registered {teacher.full_name} sir', 'refresh':str(refresh), 'access':str(refresh.access_token)}
+        message = {'success': 'Teacher registered successfully.', 'full_name': f'{full_name}', 'refresh':str(refresh), 'access':str(refresh.access_token)}
         jwt_token = str(refresh.access_token)
         jwt_payload = jwt.decode(jwt_token, verify=False)
         print("jwt-payload = ", jwt_payload)
         print("request.user = ", request.user)
         return Response(data = message, status= status.HTTP_200_OK)
-        
+
 
     except IntegrityError as exc:
         exc.__class__.__name__
@@ -78,10 +78,10 @@ def createUser(request):
         print("exc = ", exc)
         if 'username' in str(exc):
             message = {'Error: Username already exists'}
-        
+
         elif 'email' in str(exc):
             message = {'Error: An account already exists with this email.'}
-        
+
         else:
             message = {'Error: Unknown Integrity Error.'}
 
@@ -99,18 +99,18 @@ def login(request):
         teacher = Teacher.objects.get(username = username, password = hashed_password)
     except:
         teacher = None
-    
+
     if teacher is not None:
         refresh = RefreshToken.for_user(teacher)
         print("refresh = ", refresh, "type = ", type(refresh))
-        message = {'success': f'welcome {teacher.full_name} sir', 'refresh':str(refresh), 'access':str(refresh.access_token)}
+        message = {'success': f'welcome {teacher.full_name} sir', 'full_name': f'{teacher.full_name}', 'refresh':str(refresh), 'access':str(refresh.access_token)}
         jwt_token = str(refresh.access_token)
         jwt_payload = jwt.decode(jwt_token, verify=False)
         print("jwt-payload = ", jwt_payload)
         print("request.user = ", request.user)
         print(f"remaining time = {jwt_payload['exp'] - time.time()}")
         return Response(data= message, status= status.HTTP_200_OK)
-    
+
     else:
         message = {'error': 'Invalid Credentials'}
         return Response(data = message, status = status.HTTP_403_FORBIDDEN)
@@ -131,7 +131,7 @@ def forgotPassword(request):
     if email_dct not in all_user_emails:
         message = {'error': 'Please enter your campus email or contact the department.'}
         return Response(data = message, status= status.HTTP_403_FORBIDDEN)
-    
+
     #this needs to modified..........
     # global otp
     OneTimePassword.objects.filter(email = email).delete()
@@ -164,7 +164,7 @@ def validateOTP(request):
             message = {'success': 'otp verified successfully.'}
             otp_data.delete()
             return Response(data = message, status= status.HTTP_200_OK)
-        
+
         else:
             message = {'error': 'invalid otp.'}
             return Response(data = message, status= status.HTTP_401_UNAUTHORIZED)
@@ -185,7 +185,7 @@ def passwordReset(request):
     if entered_password != confirm_password:
         message = {'error': 'the entered password do not match.'}
         return Response(data = message, status= status.HTTP_403_FORBIDDEN)
-    
+
     try:
         teacher = Teacher.objects.get(email = entered_email)
         hashed_password = make_password(entered_password, salt = teacher.username)
@@ -193,12 +193,12 @@ def passwordReset(request):
         teacher.save(update_fields = ['password'])
         success_message = {'success': 'password changed successfully'}
         return Response(data = success_message, status= status.HTTP_200_OK)
-    
+
     except Teacher.DoesNotExist:
         failure_message = {'error': 'invalid email. Please enter your college email or contact the department.'}
         return Response(data = failure_message, status= status.HTTP_403_FORBIDDEN)
 
-            
+
 
 
 
@@ -210,7 +210,7 @@ def viewClasses(request):
         teacher = Teacher.objects.get(username = username)
         classes = teacher.classes
         return Response(data = classes, status= status.HTTP_200_OK)
-    
+
     except Teacher.DoesNotExist:
         failure_message = {'error': f'invalid username. Teacher with username {username} does not exist.'}
         return Response(data = failure_message, status= status.HTTP_403_FORBIDDEN)
@@ -231,10 +231,10 @@ def addClass(request):
     section = class_details['section']
 
     class_name = batch + faculty + section
-    
+
     try:
         teacher = Teacher.objects.get(username = username)
-        class_dct = {'subject': subject, 'class_name': class_name, 'class_type': class_type} 
+        class_dct = {'subject': subject, 'class_name': class_name, 'class_type': class_type}
         classes = teacher.classes
         classes = [] if type(classes) == str else classes
         print(f"classes = {classes} and type(classes) = {type(classes)}")
@@ -244,7 +244,7 @@ def addClass(request):
             teacher.save()
             success_message = {'success': f'class {class_name} added successfully.'}
             return Response(data = success_message, status = status.HTTP_200_OK)
-        
+
         else:
             message = {'error': f'class {class_name} - {subject} - {class_type} already exists.'}
             return Response(data = message, status = status.HTTP_208_ALREADY_REPORTED)
@@ -272,7 +272,7 @@ def saveRecord(request):
     teacher_username = record_details['username']
     class_name = record_details['class_name'] #for example 076bctcd
     class_type = record_details['class_type'] #l or p
-    subject = record_details['subject'] 
+    subject = record_details['subject']
     attendance_record = record_details['attendance_record']
     print("attendance_record = ", attendance_record, "type(attendance_record) = ", type(attendance_record))
     # type(attendance_record) =  <class 'dict'>
@@ -292,15 +292,15 @@ def saveRecord(request):
         record.save()
         message = {'success': 'Attendance taken successfully.'}
         return Response (data = message, status= status.HTTP_200_OK)
-                    
+
     except AttendanceRecord.DoesNotExist as err:
         error_name = err
         print("error = ", error_name)
         AttendanceRecord.objects.create(teacher_username = teacher_username, class_name = class_name, class_type = class_type, subject = subject, attendance_record = attendance_record)
         message = {'success': 'Attendance taken successfully.'}
         return Response(data = message, status= status.HTTP_200_OK)
-    
-            
+
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -323,7 +323,7 @@ def getRecords(request):
         if class_only == "True":
             del attendance_record_json_object['attendance_record']
             del attendance_record_json_object['teacher_username']
-        
+
         return Response(data = attendance_record_json_object, status= status.HTTP_200_OK)
 
     except AttendanceRecord.DoesNotExist as err:
@@ -340,7 +340,7 @@ def getRecords(request):
 def seeUsers(request):
     print("hello world")
     teacher = Teacher.objects.all()
-    teacher_string = '' 
+    teacher_string = ''
 
     for i in teacher:
         teacher_string += str(i.username) + "  " + str(i.full_name)+ '<br>'
@@ -375,12 +375,12 @@ def returnRecentDate(request):
     teacher_username = record_details['username']
     class_name = record_details['class_name'] #for example 076bctcd
     class_type = record_details['class_type'] #l or p
-    subject = record_details['subject'] 
+    subject = record_details['subject']
 
     class_details = AttendanceRecord.objects.get(teacher_username = teacher_username, class_name = class_name, class_type = class_type, subject = subject)
 
     attendance_records = class_details.attendance_record
-    dates = list(attendance_records.keys()) 
+    dates = list(attendance_records.keys())
 
     # Convert each string date to a datetime object
     datetime_dates = [datetime.strptime(date, "%m/%d/%Y") for date in dates]
@@ -395,7 +395,7 @@ def returnRecentDate(request):
     message = {'latest_date': latest_date_str}
     return Response(data = message, status= status.HTTP_200_OK)
 
-    
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def isTokenValid(request):
@@ -418,7 +418,7 @@ def isTokenValid(request):
     else:
         return_response = {'is_valid': 'False'}
         return Response(data = return_response, status = status.HTTP_401_UNAUTHORIZED)
-    
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -433,12 +433,12 @@ def deleteClass(request):
     section = class_details['section']
 
     class_name = batch + faculty + section
-    
+
     try:
         teacher = Teacher.objects.get(username = username)
         records_to_be_deleted = AttendanceRecord.objects.filter(teacher_username = username, class_name = class_name, class_type = class_type, subject = subject)
         records_to_be_deleted.delete()
-        class_dct = {'subject': subject, 'class_name': class_name, 'class_type': class_type} 
+        class_dct = {'subject': subject, 'class_name': class_name, 'class_type': class_type}
         classes = teacher.classes
         print(f"classes = {classes} and type(classes) = {type(classes)}")
         if class_dct in classes:
