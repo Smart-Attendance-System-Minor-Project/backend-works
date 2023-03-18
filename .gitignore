@@ -1,5 +1,5 @@
 *.pyc
-migrations/
+ProjectBackend/AttendanceApp/migrations/
 __pycache__/
 *.sqlite3
 ProjectBackend/staticfiles/input.txt

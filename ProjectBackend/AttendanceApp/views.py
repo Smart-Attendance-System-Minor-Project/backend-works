@@ -43,11 +43,16 @@ def teacherRegistration(request):
 @api_view(['POST'])
 def createUser(request):
     registration_details = request.data
-    username = registration_details['username']
-    email = registration_details['email']
-    password = registration_details['password']
-    confirm_password = registration_details['confirm_password']
-    full_name = registration_details['full_name']
+    username = registration_details.get('username')
+    email = registration_details.get('email')
+    password = registration_details.get('password')
+    confirm_password = registration_details.get('confirm_password')
+    full_name = registration_details.get('full_name')
+
+    for credentials in registration_details.items():
+        if credentials[1] == None:
+            message = {'failure': '{credentials[0]} can\'t be empty.'}
+            return Response(data = message, status= status.HTTP_403_FORBIDDEN, content_type= "application/json")
 
     if email not in teacher_email_list and not isValidEmail(email):
         message = {'error':'Please register with your college mail id or contact department.'}
@@ -64,7 +69,7 @@ def createUser(request):
 
         refresh = RefreshToken.for_user(teacher)
         print("refresh = ", refresh, "type = ", type(refresh))
-        message = {'success': 'Teacher registered successfully.', 'full_name': f'{full_name}', 'refresh':str(refresh), 'access':str(refresh.access_token)}
+        message = {'success': f'Successfully registered {teacher.full_name} sir', 'refresh':str(refresh), 'access':str(refresh.access_token)}
         jwt_token = str(refresh.access_token)
         jwt_payload = jwt.decode(jwt_token, verify=False)
         print("jwt-payload = ", jwt_payload)
@@ -92,8 +97,13 @@ def createUser(request):
 @api_view(['POST'])
 def login(request):
     login_details = request.data
-    username = login_details['username']
-    password = login_details['password']
+    username = login_details.get('username')
+    password = login_details.get('password')
+    for credentials in login_details.items():
+        if credentials[1] == None:
+            message = {'failure': '{credentials[0]} can\'t be Empty'}
+            return Response(data = message, status= status.HTTP_403_FORBIDDEN, content_type= "application/json")
+
     hashed_password = make_password(password, salt=username)
     try:
         teacher = Teacher.objects.get(username = username, password = hashed_password)
@@ -103,7 +113,7 @@ def login(request):
     if teacher is not None:
         refresh = RefreshToken.for_user(teacher)
         print("refresh = ", refresh, "type = ", type(refresh))
-        message = {'success': f'welcome {teacher.full_name} sir', 'full_name': f'{teacher.full_name}', 'refresh':str(refresh), 'access':str(refresh.access_token)}
+        message = {'success': f'welcome {teacher.full_name} sir', 'refresh':str(refresh), 'access':str(refresh.access_token)}
         jwt_token = str(refresh.access_token)
         jwt_payload = jwt.decode(jwt_token, verify=False)
         print("jwt-payload = ", jwt_payload)
@@ -359,10 +369,9 @@ def warnStudents(request):
     total_class = details.get('total_class')
     student_name = details.get('student_name')
     subject_name = details.get('subject_name')
-    full_name = details.get('full_name')
     class_name = details.get('class_name')
     presence_percent = round((int(total_class) - int(total_absent))*100/ int(total_class), 2)
-    email_body = f'Dear {student_name}, \n\nThis is to inform you that your presence in the class {class_name}-{subject_name} is poor. Please attend class regularly. \n \nTotal class = {total_class} \nTotal absent = {total_absent} \nPresence percentage = {presence_percent}%\n \n' + message + '\n\nWith regards,\n{full_name}' +'\n\nThis is an automated email. Please do not reply.'
+    email_body = f'Dear {student_name}, \n\nThis is to inform you that your presence in the class {class_name}-{subject_name} is poor. Please attend class regularly. \n \nTotal class = {total_class} \nTotal absent = {total_absent} \nPresence percentage = {presence_percent}%\n \n' + message + '\n\nThis is an automated email. Please do not reply.'
     send_mail(subject, email_body, 'mail.ioehub@gmail.com', [f'{email}'], fail_silently= False,)
 
     return_message = {'success': 'student warned successfully'}
