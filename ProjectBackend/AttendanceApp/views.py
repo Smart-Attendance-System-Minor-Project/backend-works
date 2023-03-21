@@ -105,12 +105,22 @@ def login(request):
             message = {'failure': '{credentials[0]} can\'t be Empty'}
             return Response(data = message, status= status.HTTP_403_FORBIDDEN, content_type= "application/json")
 
-    hashed_password = make_password(password, salt=username_or_email)
+
     try:
-        #first search with username and pw
-        teacher = Teacher.objects.get(Q(username=username_or_email) | Q(email=username_or_email), password = hashed_password)
+        #first search the teacher with username or email
+        teacher = Teacher.objects.get(Q(username=username_or_email) | Q(email=username_or_email))
+        username = teacher.username
+        hashed_password = make_password(password, salt=username)
     except:
         teacher = None
+
+    if teacher is not None:
+        try:
+            #if teacher with the entered username and email exist, check his/her password.
+            teacher = Teacher.objects.get(Q(username=username_or_email) | Q(email=username_or_email), password = hashed_password)
+            
+        except:
+            teacher = None
 
 
     if teacher is not None:
