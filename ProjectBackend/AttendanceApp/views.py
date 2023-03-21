@@ -108,14 +108,10 @@ def login(request):
     hashed_password = make_password(password, salt=username_or_email)
     try:
         #first search with username and pw
-        teacher = Teacher.objects.get(Q(username=username_or_email) | Q(email=username_or_email))
+        teacher = Teacher.objects.get(Q(username=username_or_email) | Q(email=username_or_email), password = hashed_password)
     except:
-        try:
-            #if the user is not found with username search with his/her email and pw
-            teacher = Teacher.objects.get(email = username_or_email, password = hashed_password)
-        except:
-            #if not found with both username and email, then the teacher doesn't exist.
-            teacher = None
+        teacher = None
+
 
     if teacher is not None:
         refresh = RefreshToken.for_user(teacher)
