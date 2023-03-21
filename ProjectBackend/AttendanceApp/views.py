@@ -14,6 +14,7 @@ from django.db import IntegrityError
 from .validation import teacher_email_list, isValidEmail
 from rest_framework_simplejwt.tokens import RefreshToken
 import jwt
+from django.db.models import Q
 from django.contrib.auth.hashers import make_password
 from datetime import datetime
 #ast is an abstract syntax tree and it is used to convert one data type to the other
@@ -107,7 +108,7 @@ def login(request):
     hashed_password = make_password(password, salt=username_or_email)
     try:
         #first search with username and pw
-        teacher = Teacher.objects.get(username = username_or_email, password = hashed_password)
+        teacher = Teacher.objects.get(Q(username=username_or_email) | Q(email=username_or_email))
     except:
         try:
             #if the user is not found with username search with his/her email and pw
