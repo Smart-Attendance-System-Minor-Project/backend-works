@@ -119,7 +119,7 @@ def login(request):
     if teacher is not None:
         refresh = RefreshToken.for_user(teacher)
         print("refresh = ", refresh, "type = ", type(refresh))
-        message = {'success': f'welcome {teacher.full_name} sir', 'full_name': teacher.full_name, 'email': teacher.email,'refresh':str(refresh), 'access':str(refresh.access_token)}
+        message = {'success': f'welcome {teacher.full_name} sir', 'full_name': teacher.full_name, 'email': teacher.email, 'username': teacher.username, 'refresh':str(refresh), 'access':str(refresh.access_token)}
         jwt_token = str(refresh.access_token)
         jwt_payload = jwt.decode(jwt_token, verify=False)
         print("jwt-payload = ", jwt_payload)
