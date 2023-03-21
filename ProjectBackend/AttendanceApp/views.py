@@ -97,18 +97,24 @@ def createUser(request):
 @api_view(['POST'])
 def login(request):
     login_details = request.data
-    username = login_details.get('username')
+    username_or_email = login_details.get('username')
     password = login_details.get('password')
     for credentials in login_details.items():
         if credentials[1] == None:
             message = {'failure': '{credentials[0]} can\'t be Empty'}
             return Response(data = message, status= status.HTTP_403_FORBIDDEN, content_type= "application/json")
 
-    hashed_password = make_password(password, salt=username)
+    hashed_password = make_password(password, salt=username_or_email)
     try:
-        teacher = Teacher.objects.get(username = username, password = hashed_password)
+        #first search with username and pw
+        teacher = Teacher.objects.get(username = username_or_email, password = hashed_password)
     except:
-        teacher = None
+        try:
+            #if the user is not found with username search with his/her email and pw
+            teacher = Teacher.objects.get(email = username_or_email, password = hashed_password)
+        except:
+            #if not found with both username and email, then the teacher doesn't exist.
+            teacher = None
 
     if teacher is not None:
         refresh = RefreshToken.for_user(teacher)
@@ -129,7 +135,7 @@ def login(request):
 @api_view(['POST'])
 @csrf_exempt
 def forgotPassword(request):
-    email = request.data['email']
+    email = request.data.get('email')
     # print("email = ", email, "type(email) = ", type(email))
     email_dct = {'email': email}
     all_user_emails = Teacher.objects.values('email')
@@ -158,8 +164,8 @@ def forgotPassword(request):
 @api_view(['POST'])
 @csrf_exempt
 def validateOTP(request):
-    entered_email = request.data['email']
-    entered_otp = request.data['otp']
+    entered_email = request.data.get('email')
+    entered_otp = request.data.get('otp')
     try:
         otp_data = OneTimePassword.objects.get(email = entered_email)
         current_time = int(time.time())
@@ -189,9 +195,10 @@ def validateOTP(request):
 @api_view(['POST'])
 @csrf_exempt
 def passwordReset(request):
-    entered_email = request.data['email']
-    entered_password = request.data['password']
-    confirm_password = request.data['confirm_password']
+    details = request.data
+    entered_email = details.get('email')
+    entered_password = details.get('password')
+    confirm_password = details.get('confirm_password')
     if entered_password != confirm_password:
         message = {'error': 'the entered password do not match.'}
         return Response(data = message, status= status.HTTP_403_FORBIDDEN)
@@ -215,7 +222,7 @@ def passwordReset(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def viewClasses(request):
-    username = request.data['username']
+    username = request.data.get('username')
     try:
         teacher = Teacher.objects.get(username = username)
         classes = teacher.classes
@@ -233,12 +240,12 @@ def viewClasses(request):
 def addClass(request):
     class_details = request.data
     #username will be sent by the frontend
-    username = class_details['username']
-    batch = class_details['batch']
-    faculty = class_details['faculty']
-    subject = class_details['subject']
-    class_type = class_details['class_type']
-    section = class_details['section']
+    username = class_details.get('username')
+    batch = class_details.get('batch')
+    faculty = class_details.get('faculty')
+    subject = class_details.get('subject')
+    class_type = class_details.get('class_type')
+    section = class_details.get('section')
 
     class_name = batch + faculty + section
 
@@ -279,11 +286,11 @@ def viewOTP(request):
 @permission_classes([IsAuthenticated])
 def saveRecord(request):
     record_details = request.data
-    teacher_username = record_details['username']
-    class_name = record_details['class_name'] #for example 076bctcd
-    class_type = record_details['class_type'] #l or p
-    subject = record_details['subject']
-    attendance_record = record_details['attendance_record']
+    teacher_username = record_details.get('username')
+    class_name = record_details.get('class_name') #for example 076bctcd
+    class_type = record_details.get('class_type') #l or p
+    subject = record_details.get('subject')
+    attendance_record = record_details.get('attendance_record')
     print("attendance_record = ", attendance_record, "type(attendance_record) = ", type(attendance_record))
     # type(attendance_record) =  <class 'dict'>
     try:
@@ -316,7 +323,7 @@ def saveRecord(request):
 @permission_classes([IsAuthenticated])
 def getRecords(request):
     record_details = request.data
-    username = record_details['username']
+    username = record_details.get('username')
     class_only = record_details.get('class_only')
 
     try:
@@ -361,8 +368,9 @@ def seeUsers(request):
 @permission_classes([IsAuthenticated])
 def warnStudents(request):
     details = request.data
-    email = details['email']
-    subject = details['subject']
+    email = details.get('email')
+    subject = details.get('subject')
+    teacher = details.get('teacher')
     message = details.get('message')
     message = '' if message == None else message
     total_absent = details.get('total_absent')
@@ -371,7 +379,7 @@ def warnStudents(request):
     subject_name = details.get('subject_name')
     class_name = details.get('class_name')
     presence_percent = round((int(total_class) - int(total_absent))*100/ int(total_class), 2)
-    email_body = f'Dear {student_name}, \n\nThis is to inform you that your presence in the class {class_name}-{subject_name} is poor. Please attend class regularly. \n \nTotal class = {total_class} \nTotal absent = {total_absent} \nPresence percentage = {presence_percent}%\n \n' + message + '\n\nThis is an automated email. Please do not reply.'
+    email_body = f'Dear {student_name}, \n\nThis is to inform you that your presence in the class {class_name}-{subject_name} is poor. Please attend class regularly. \n \nTotal class = {total_class} \nTotal absent = {total_absent} \nPresence percentage = {presence_percent}%\n \n' + message + '\n\nWith regards,\n{teacher}\n\nThis is an automated email. Please do not reply.'
     send_mail(subject, email_body, 'mail.ioehub@gmail.com', [f'{email}'], fail_silently= False,)
 
     return_message = {'success': 'student warned successfully'}
