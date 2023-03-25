@@ -375,16 +375,32 @@ def seeUsers(request):
 @permission_classes([IsAuthenticated])
 def warnStudents(request):
     details = request.data
-    email = details.get('email')
     subject = details.get('subject')
     teacher = details.get('teacher')
     message = details.get('message')
     message = '' if message == None else message
+    subject_name = details.get('subject_name')
+    class_name = details.get('class_name')
+    bulk = details.get('bulk')
+    if bulk == 'true':
+        student_details = details.get('student_details')
+        for student in student_details:
+            email = student.get('email')
+            total_absent = student.get('total_absent')
+            total_class = student.get('total_class')
+            student_name = student.get('student_name')
+            presence_percent = student.get('presence_percent')
+            email_body = f'Dear {student_name}, \n\nThis is to inform you that your presence in the class {class_name}-{subject_name} is poor. Please attend class regularly. \n \nTotal class = {total_class} \nTotal absent = {total_absent} \nPresence percentage = {presence_percent}%\n \n' + message + f'\n\nWith regards,\n{teacher}\n\nThis is an automated email. Please do not reply.'
+            send_mail(subject, email_body, 'mail.ioehub@gmail.com', [f'{email}'], fail_silently= False,)
+        
+        return_message = {'success': 'students warned successfully'}
+        return Response(data = return_message, status= status.HTTP_200_OK)
+
+
+    email = details.get('email')
     total_absent = details.get('total_absent')
     total_class = details.get('total_class')
     student_name = details.get('student_name')
-    subject_name = details.get('subject_name')
-    class_name = details.get('class_name')
     presence_percent = round((int(total_class) - int(total_absent))*100/ int(total_class), 2)
     email_body = f'Dear {student_name}, \n\nThis is to inform you that your presence in the class {class_name}-{subject_name} is poor. Please attend class regularly. \n \nTotal class = {total_class} \nTotal absent = {total_absent} \nPresence percentage = {presence_percent}%\n \n' + message + f'\n\nWith regards,\n{teacher}\n\nThis is an automated email. Please do not reply.'
     send_mail(subject, email_body, 'mail.ioehub@gmail.com', [f'{email}'], fail_silently= False,)
