@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-6%@n7pj09j7)&)n#*q01&^e4pm!u6vv$bpi-*1oq*p)2m@#vui'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['wellattend.pythonanywhere.com', '127.0.0.1', 'localhost']
 
@@ -115,6 +115,8 @@ WSGI_APPLICATION = 'ProjectBackend.wsgi.application'
 #     }
 # }
 
+
+#enter the database details here. It is left blank due to privacy concern.
 DATABASES =  {
     'default':
     {
@@ -171,6 +173,8 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
+#enter the email and app password here. It is left blank due to privacy concern.
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_HOST_USER = ''
